@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::BufRead;
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
-use tokio::{net::TcpStream};
+use tokio::net::TcpStream;
 
 mod rcon;
 use rcon::RCONPacket;
