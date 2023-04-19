@@ -8,7 +8,6 @@ use rcon::{RconPacket, RconClient};
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-
     let mut connection = RconClient::connect("157.211.143.221:25575", "minecraft").await?;
     let player_list_message = connection.command("list").await?;
     println!("Got player list:\n{}", player_list_message);
