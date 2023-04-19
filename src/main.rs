@@ -31,17 +31,26 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     match return_packet {
         Ok(_return_packet) => {
-            println!("Connected :)");
+            println!("\x1b[32mConnected :)\x1b[0m");
             for line in iterator {
                 let command = line.unwrap();
 
-                let result = connection.command(command.as_str()).await?;
+                let result = connection.command(command.as_str()).await;
 
-                println!("{}", result);
+                match result {
+                    Ok(res) => {
+                        println!("{}", res);
+                    }
+                    Err(err) => {
+                        println!("\x1b[31mConnection failed:\x1b[0m {}", err);
+                        return Ok(());
+                    }
+                }
+
             }
         }
         Err(err) => {
-            panic!("Connection failed: {}", err);
+            println!("\x1b[31mConnection failed:\x1b[0m {}", err);
         }
     }
 
