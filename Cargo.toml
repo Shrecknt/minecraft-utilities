@@ -6,4 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+json = "0.12.4"
 tokio = { version = "1.27.0", features = ["full"] }
+varint-rs = "2.2.0"
