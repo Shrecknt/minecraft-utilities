@@ -8,7 +8,8 @@ use rcon::{RconPacket, RconClient};
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    let mut connection = RconClient::connect("157.211.143.221:25575", "minecraft").await?;
+    let mut connection = RconClient::connect("157.211.143.221:25575", None).await?;
+    connection.login("minecraft").await?;
     let player_list_message = connection.command("list").await?;
     println!("Got player list:\n{}", player_list_message);
 
@@ -22,7 +23,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     if !input_ip.eq("") {
         ip = input_ip.as_str();
     }
-    
+
     let mut stream = TcpStream::connect(ip).await?;
 
     let mut request_id: i32 = 0;

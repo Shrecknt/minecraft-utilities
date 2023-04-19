@@ -1,3 +1,4 @@
+use core::panic;
 use std::error::Error;
 use tokio::{io::{AsyncWriteExt, AsyncReadExt}, net::TcpStream};
 
@@ -8,7 +9,7 @@ pub struct RconClient {
 }
 
 impl RconClient {
-    pub async fn connect(addr: &str, password: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn connect(addr: &str, password: Option<&str>) -> Result<Self, Box<dyn Error>> {
         let mut client = RconClient {
             request_id: 0,
             connected: false,
@@ -20,29 +21,43 @@ impl RconClient {
         client.stream = Some(connection);
         client.connected = true;
 
-        let mut login_packet = RconPacket::new();
-        login_packet.request_id = client.request_id;
-        client.request_id += 1;
-        login_packet.request_type = 3;
-        login_packet.payload = password.into();
-
-        let login_res = client.send_packet(login_packet).await?;
-
-        if login_res.request_id == -1 {
+        if password.is_some() {
+            client.login(password.unwrap()).await?;
+        } else {
             client.connected = false;
-            client.stream = None;
-            panic!("Incorrect password");
-        } else if login_res.request_id != 0 {
-            panic!("are you sure you connected to an rcon server?");
         }
 
         Ok(client)
     }
 
-    async fn send_packet(&mut self, packet: RconPacket) -> Result<RconPacket, Box<dyn Error>> {
-        if !&self.connected {
-            panic!("some error message");
+    pub async fn login(&mut self, password: &str) -> Result<(), Box<dyn Error>> {
+        if self.connected {
+            panic!("Already logged into RCON server");
         }
+
+        let mut login_packet = RconPacket::new();
+        let login_packet_id = self.request_id;
+        login_packet.request_id = self.request_id;
+        self.request_id += 1;
+        login_packet.request_type = 3;
+        login_packet.payload = password.into();
+
+        let login_res = self.send_packet(login_packet).await?;
+
+        if login_res.request_id == -1 {
+            self.connected = false;
+            panic!("Incorrect password");
+        } else if login_res.request_id != login_packet_id {
+            self.connected = false;
+            panic!("are you sure you connected to an rcon server?");
+        }
+
+        self.connected = true;
+
+        return Ok(());
+    }
+
+    async fn send_packet(&mut self, packet: RconPacket) -> Result<RconPacket, Box<dyn Error>> {
         match &mut self.stream {
             Some(stream) => {
                 let built_packet = packet.build().await?;
@@ -62,7 +77,11 @@ impl RconClient {
         }
     }
 
-    pub async fn command(&mut self, command: &str) -> Result<String, Box<dyn Error>>{
+    pub async fn command(&mut self, command: &str) -> Result<String, Box<dyn Error>> {
+        if !self.connected {
+            panic!("RCON client not logged in");
+        }
+
         let mut packet = RconPacket::new();
         packet.request_id = self.request_id;
         self.request_id += 1;
@@ -105,7 +124,7 @@ impl RconPacket {
 
     pub async fn parse(&mut self, raw: &Vec<u8>) -> Result<(), Box<dyn Error>> {
         let _length = as_i32_le(&raw[0..4].try_into().unwrap());
-        //println!("Packet Length: {}", _length);
+        println!("Packet Length: {}", _length);
         let request_id = as_i32_le(&raw[4..8].try_into().unwrap());
         let request_type = as_i32_le(&raw[8..12].try_into().unwrap());
         let mut payload = (&raw[13..]).to_vec();
