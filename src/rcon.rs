@@ -32,7 +32,7 @@ impl RconClient {
 
     pub async fn login(&mut self, password: &str) -> Result<(), Box<dyn Error>> {
         if self.connected {
-            panic!("Already logged into RCON server");
+            panic!("Attempted to authenticate while already logged into RCON server");
         }
 
         let mut login_packet = RconPacket::new();
@@ -46,10 +46,10 @@ impl RconClient {
 
         if login_res.request_id == -1 {
             self.connected = false;
-            panic!("Incorrect password");
+            panic!("Authentication failure, make sure you typed your password correctly");
         } else if login_res.request_id != login_packet_id {
             self.connected = false;
-            panic!("are you sure you connected to an rcon server?");
+            panic!("Recieved a strange packet from server. Are you sure this is an RCON server?");
         }
 
         self.connected = true;
@@ -72,14 +72,14 @@ impl RconClient {
                 return Ok(res_return_packet);
             }
             None => {
-                panic!("How did you get here??");
+                panic!("Attempted to send packet before establishing a connection to server");
             }
         }
     }
 
     pub async fn command(&mut self, command: &str) -> Result<String, Box<dyn Error>> {
         if !self.connected {
-            panic!("RCON client not logged in");
+            panic!("Attempted to send command before client is authenticated");
         }
 
         let mut packet = RconPacket::new();
