@@ -97,7 +97,8 @@ impl RconClient {
 pub struct RconPacket {
     pub request_id: i32,
     pub request_type: i32,
-    pub payload: Vec<u8>
+    pub payload: Vec<u8>,
+    length: Option<i32>
 }
 
 #[allow(dead_code)]
@@ -106,7 +107,8 @@ impl RconPacket {
         RconPacket {
             request_id: 0,
             request_type: 0,
-            payload: vec![]
+            payload: vec![],
+            length: None
         }
     }
 
@@ -124,8 +126,7 @@ impl RconPacket {
     }
 
     pub async fn parse(&mut self, raw: &Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let _length = as_i32_le(&raw[0..4].try_into().unwrap());
-        println!("Packet Length: {}", _length);
+        let length = as_i32_le(&raw[0..4].try_into().unwrap());
         let request_id = as_i32_le(&raw[4..8].try_into().unwrap());
         let request_type = as_i32_le(&raw[8..12].try_into().unwrap());
         let mut payload = (&raw[13..]).to_vec();
@@ -135,6 +136,7 @@ impl RconPacket {
         self.request_id = request_id;
         self.request_type = request_type;
         self.payload = payload;
+        self.length = Some(length);
 
         Ok(())
     }
