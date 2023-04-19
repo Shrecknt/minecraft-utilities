@@ -8,6 +8,7 @@ pub struct RconClient {
     stream: Option<TcpStream>
 }
 
+#[allow(dead_code)]
 impl RconClient {
     pub async fn connect(addr: &str, password: Option<&str>) -> Result<Self, Box<dyn Error>> {
         let mut client = RconClient {
@@ -100,6 +101,7 @@ pub struct RconPacket {
     pub payload: Vec<u8>
 }
 
+#[allow(dead_code)]
 impl RconPacket {
     pub fn new() -> Self {
         RconPacket {
