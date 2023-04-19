@@ -30,7 +30,7 @@ impl RconClient {
         Ok(client)
     }
 
-    pub async fn login(&mut self, password: &str) -> Result<(), Box<dyn Error>> {
+    pub async fn login(&mut self, password: &str) -> Result<RconPacket, Box<dyn Error>> {
         if self.connected {
             panic!("Attempted to authenticate while already logged into RCON server");
         }
@@ -54,7 +54,7 @@ impl RconClient {
 
         self.connected = true;
 
-        return Ok(());
+        return Ok(login_res);
     }
 
     async fn send_packet(&mut self, packet: RconPacket) -> Result<RconPacket, Box<dyn Error>> {
