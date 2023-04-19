@@ -149,6 +149,20 @@ impl RconPacket {
         let str = self.payload_to_string();
         println!("Request ID: {}, Request Type: {}, payload: {}", self.request_id, self.request_type, str);
     }
+
+    pub fn to_string(&self) -> String {
+        let str = self.payload_to_string().replace("\\", "\\\\").replace("\"", "\\\"");
+        format!(
+            "{{ \"request_id\": \"{}\", \"request_type\": \"{}\", \"payload\": \"{}\", \"length\": \"{}\" }}",
+            self.request_id, self.request_type, str, self.length.unwrap_or(-1)
+        )
+    }
+}
+
+impl std::fmt::Display for RconPacket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
 }
 
 fn as_i32_le(array: &[u8; 4]) -> i32 {
