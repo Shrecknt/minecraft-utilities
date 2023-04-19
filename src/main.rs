@@ -15,12 +15,14 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let stdin = std::io::stdin();
     let mut iterator = stdin.lock().lines();
 
-    println!("Enter the RCON server's ip:");
+    let default_ip = "157.211.143.221:25575";
+    println!("Enter the RCON server's ip (default '{}'):", default_ip);
     let input_ip = iterator.next().unwrap().unwrap();
-    let mut ip = "157.211.143.221:25575";
+    let mut ip = default_ip;
     if !input_ip.eq("") {
         ip = input_ip.as_str();
     }
+    
     let mut stream = TcpStream::connect(ip).await?;
 
     let mut request_id: i32 = 0;
@@ -28,8 +30,15 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let mut login_packet = RconPacket::new();
     login_packet.request_id = request_id;
     login_packet.request_type = 3;
-    println!("RCON client connected! Enter password:");
-    login_packet.payload = iterator.next().unwrap().unwrap().into();
+
+    let default_password = "minecraft";
+    println!("RCON client connected! Enter password (default '{}'):", default_password);
+    login_packet.payload = default_password.into();
+    let input_password = iterator.next().unwrap().unwrap();
+    if !input_password.eq("") {
+        login_packet.payload = input_password.into();
+    }
+
     stream.write_all(&login_packet.build().await?).await?;
 
     let mut buf: Vec<u8> = vec![];
