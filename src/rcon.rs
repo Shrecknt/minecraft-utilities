@@ -1,4 +1,3 @@
-use core::panic;
 use std::error::Error;
 use tokio::{io::{AsyncWriteExt, AsyncReadExt}, net::TcpStream};
 
@@ -33,7 +32,7 @@ impl RconClient {
 
     pub async fn login(&mut self, password: &str) -> Result<RconPacket, Box<dyn Error>> {
         if self.connected {
-            panic!("Attempted to authenticate while already logged into RCON server");
+            return Err("Attempted to authenticate while already logged into RCON server".into());
         }
 
         let mut login_packet = RconPacket::new();
@@ -47,10 +46,10 @@ impl RconClient {
 
         if login_res.request_id == -1 {
             self.connected = false;
-            panic!("Authentication failure, make sure you typed your password correctly");
+            return Err("Authentication failure, make sure you typed your password correctly".into());
         } else if login_res.request_id != login_packet_id {
             self.connected = false;
-            panic!("Recieved a strange packet from server. Are you sure this is an RCON server?");
+            return Err("Recieved a strange packet from server. Are you sure this is an RCON server?".into());
         }
 
         self.connected = true;
@@ -73,14 +72,14 @@ impl RconClient {
                 return Ok(res_return_packet);
             }
             None => {
-                panic!("Attempted to send packet before establishing a connection to server");
+                return Err("Attempted to send packet before establishing a connection to server".into());
             }
         }
     }
 
     pub async fn command(&mut self, command: &str) -> Result<String, Box<dyn Error>> {
         if !self.connected {
-            panic!("Attempted to send command before client is authenticated");
+            return Err("Attempted to send command before client is authenticated".into());
         }
 
         let mut packet = RconPacket::new();
