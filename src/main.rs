@@ -4,8 +4,22 @@ use std::io::BufRead;
 mod rcon;
 use rcon::RconClient;
 
+mod ping;
+use ping::Ping;
+
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
+
+    let test = Ping::ping("157.211.143.221:25565").await;
+    match test {
+        Ok(res) => {
+            println!("Got result: {}", json::stringify_pretty(res.contents, 4));
+        }
+        Err(err) => {
+            println!("An error occured: {}", err);
+        }
+    }
+
     let stdin = std::io::stdin();
     let mut iterator = stdin.lock().lines();
 
