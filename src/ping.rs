@@ -1,36 +1,50 @@
-use std::{error::Error, vec};
 use json::JsonValue;
-use tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}};
-
+use std::{error::Error, vec};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
 
 pub struct Ping {
-    pub contents: Option<JsonValue>
+    pub contents: Option<JsonValue>,
 }
 
 impl Ping {
-    pub async fn ping(addr: &str) -> Result<Self, Box<dyn Error>> {
-        let mut val = Ping {
-            contents: None
-        };
+    pub async fn ping(
+        addr: &str,
+        input_protocol_version: Option<u16>,
+        input_hostname: Option<&str>,
+        input_port: Option<u16>,
+    ) -> Result<Self, Box<dyn Error>> {
+        let mut val = Ping { contents: None };
+
+        const DEFAULT_PROTOCOL_VERSION: u16 = 0xf805;
+        const DEFAULT_HOSTNAME: &str = "shrecked.dev";
+        const DEFAULT_PORT: u16 = 42069;
+
+        let protocol_version = input_protocol_version.unwrap_or(DEFAULT_PROTOCOL_VERSION);
+        let hostname = input_hostname.unwrap_or(DEFAULT_HOSTNAME);
+        let port = input_port.unwrap_or(DEFAULT_PORT);
 
         let mut connection = TcpStream::connect(addr).await?;
 
         let mut connect_packet: Vec<u8> = vec![];
         connect_packet.write_u8(0x00).await?;
-        connect_packet.write_u16(0xf805).await?; // protocol version - 760 (1.19.2)
-        connect_packet.write_u8(0x0c).await?; // host length - 12
-        connect_packet.write("shrecked.dev".as_bytes()).await?; // host name - shrecked.dev
-        connect_packet.write_u16(42069).await?; // port number - 42069
+        connect_packet.write_u16(protocol_version).await?; // protocol version - 760 (1.19.2)
+                                                           //connect_packet.write_u8(0x0c).await?; // host length - 12
+        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, hostname.len())?; // host length - 12
+        connect_packet.write(hostname.as_bytes()).await?; // host name - shrecked.dev
+        connect_packet.write_u16(port).await?; // port number - 42069
         connect_packet.write_u8(0x01).await?; // next state - 1 (ping)
 
-        println!("Sending: {:?}", connect_packet);
+        //println!("Sending: {:?}", connect_packet);
 
         send_prefixed_packet(&mut connection, &connect_packet).await?;
 
         let mut ping_packet: Vec<u8> = vec![];
         ping_packet.write_u8(0x00).await?;
 
-        println!("Sending: {:?}", ping_packet);
+        //println!("Sending: {:?}", ping_packet);
 
         send_prefixed_packet(&mut connection, &ping_packet).await?;
 
@@ -46,14 +60,16 @@ impl Ping {
         }
     }
 
-    async fn generate_contents(&mut self, connection: &mut TcpStream) -> Result<(), Box<dyn Error>> {
-        let mut len = read_varint(connection).await?;
-        connection.read_u8().await?;
-        len -= 1;
+    async fn generate_contents(
+        &mut self,
+        connection: &mut TcpStream,
+    ) -> Result<(), Box<dyn Error>> {
+        read_varint(connection).await?; // total packet length - ignore
+        connection.read_u8().await?; // packet id - 0x00
+        let len = read_varint(connection).await?; // length of remaining packet
 
         let mut data = vec![0; len as usize];
         connection.read_exact(&mut data).await?;
-        println!("Got len: {}, data: {:?}", len, data);
 
         let source: String = data.iter().map(|x| char::from(*x)).collect();
         let res = json::parse(&source);
@@ -69,7 +85,10 @@ impl Ping {
     }
 }
 
-async fn send_prefixed_packet(connection: &mut TcpStream, data: &Vec<u8>) -> Result<(), Box<dyn Error>> {
+async fn send_prefixed_packet(
+    connection: &mut TcpStream,
+    data: &Vec<u8>,
+) -> Result<(), Box<dyn Error>> {
     let mut buffer: Vec<u8> = vec![];
     varint_rs::VarintWriter::write_usize_varint(&mut buffer, data.len())?;
     buffer.write(&data).await?;
@@ -88,7 +107,8 @@ async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> {
     let mut read_count = 0u32;
     loop {
         stream.read_exact(&mut buffer).await?;
-        result |= (buffer[0] as i32 & LAST_SEVEN_BITS).checked_shl(7 * read_count)
+        result |= (buffer[0] as i32 & LAST_SEVEN_BITS)
+            .checked_shl(7 * read_count)
             .ok_or("Unsupported protocol")?;
 
         read_count += 1;
