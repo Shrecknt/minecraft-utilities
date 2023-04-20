@@ -9,8 +9,7 @@ use ping::Ping;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-
-    let test = Ping::ping("157.211.143.221:25565").await;
+    let test = Ping::ping("157.211.143.221:25565", None, Some("idk"), Some(25565)).await;
     match test {
         Ok(res) => {
             println!("Got result: {}", json::stringify_pretty(res.contents, 4));
@@ -34,7 +33,10 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let mut connection = RconClient::connect(ip, None).await?;
 
     let default_password = "minecraft";
-    println!("RCON client connected! Enter password (default '{}'):", default_password);
+    println!(
+        "RCON client connected! Enter password (default '{}'):",
+        default_password
+    );
     let input_password = iterator.next().unwrap().unwrap();
     let mut password = default_password;
     if !input_password.eq("") {
@@ -60,7 +62,6 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
                         return Ok(());
                     }
                 }
-
             }
         }
         Err(err) => {
