@@ -20,7 +20,7 @@ impl Ping {
 
         const DEFAULT_PROTOCOL_VERSION: u16 = 0xf805;
         const DEFAULT_HOSTNAME: &str = "shrecked.dev";
-        const DEFAULT_PORT: u16 = 42069;
+        const DEFAULT_PORT: u16 = 25565;
 
         let protocol_version = input_protocol_version.unwrap_or(DEFAULT_PROTOCOL_VERSION);
         let hostname = input_hostname.unwrap_or(DEFAULT_HOSTNAME);
@@ -64,9 +64,24 @@ impl Ping {
         &mut self,
         connection: &mut TcpStream,
     ) -> Result<(), Box<dyn Error>> {
-        read_varint(connection).await?; // total packet length - ignore
-        connection.read_u8().await?; // packet id - 0x00
-        let len = read_varint(connection).await?; // length of remaining packet
+        println!("wut");
+
+        //let mut debug_buf: Vec<u8> = vec![];
+        //connection.read_buf(&mut debug_buf).await?;
+        //println!("debug_buf: {:?}", debug_buf);
+
+        let _debug_0 = read_varint(connection).await?;
+        // total packet length - ignore
+        //println!("_debug_0: {}", _debug_0);
+
+        let _debug_1 = connection.read_u8().await?;
+        assert_eq!(_debug_1, 0x00);
+        // packet id - 0x00
+        //println!("_debug_1: {}", _debug_1);
+
+        let len = read_varint(connection).await?;
+        // length of remaining packet
+        //println!("len: {}", len);
 
         let mut data = vec![0; len as usize];
         connection.read_exact(&mut data).await?;
