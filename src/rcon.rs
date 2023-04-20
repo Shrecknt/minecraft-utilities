@@ -1,10 +1,13 @@
 use std::error::Error;
-use tokio::{io::{AsyncWriteExt, AsyncReadExt}, net::TcpStream};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
 
 pub struct RconClient {
     request_id: i32,
     connected: bool,
-    stream: Option<TcpStream>
+    stream: Option<TcpStream>,
 }
 
 #[allow(dead_code)]
@@ -13,7 +16,7 @@ impl RconClient {
         let mut client = RconClient {
             request_id: 0,
             connected: false,
-            stream: None
+            stream: None,
         };
 
         let connection = TcpStream::connect(addr).await?;
@@ -46,10 +49,15 @@ impl RconClient {
 
         if login_res.request_id == -1 {
             self.connected = false;
-            return Err("Authentication failure, make sure you typed your password correctly".into());
+            return Err(
+                "Authentication failure, make sure you typed your password correctly".into(),
+            );
         } else if login_res.request_id != login_packet_id {
             self.connected = false;
-            return Err("Recieved a strange packet from server. Are you sure this is an RCON server?".into());
+            return Err(
+                "Recieved a strange packet from server. Are you sure this is an RCON server?"
+                    .into(),
+            );
         }
 
         self.connected = true;
@@ -72,7 +80,9 @@ impl RconClient {
                 return Ok(res_return_packet);
             }
             None => {
-                return Err("Attempted to send packet before establishing a connection to server".into());
+                return Err(
+                    "Attempted to send packet before establishing a connection to server".into(),
+                );
             }
         }
     }
@@ -98,7 +108,7 @@ pub struct RconPacket {
     pub request_id: i32,
     pub request_type: i32,
     pub payload: Vec<u8>,
-    length: Option<i32>
+    length: Option<i32>,
 }
 
 #[allow(dead_code)]
@@ -108,7 +118,7 @@ impl RconPacket {
             request_id: 0,
             request_type: 0,
             payload: vec![],
-            length: None
+            length: None,
         }
     }
 
@@ -147,11 +157,17 @@ impl RconPacket {
 
     pub fn print(&self) {
         let str = self.payload_to_string();
-        println!("Request ID: {}, Request Type: {}, payload: {}", self.request_id, self.request_type, str);
+        println!(
+            "Request ID: {}, Request Type: {}, payload: {}",
+            self.request_id, self.request_type, str
+        );
     }
 
     pub fn to_string(&self) -> String {
-        let str = self.payload_to_string().replace("\\", "\\\\").replace("\"", "\\\"");
+        let str = self
+            .payload_to_string()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"");
         format!(
             "{{ \"request_id\": \"{}\", \"request_type\": \"{}\", \"payload\": \"{}\", \"length\": \"{}\" }}",
             self.request_id, self.request_type, str, self.length.unwrap_or(-1)
@@ -166,8 +182,8 @@ impl std::fmt::Display for RconPacket {
 }
 
 fn as_i32_le(array: &[u8; 4]) -> i32 {
-    ((array[0] as i32) <<  0) +
-    ((array[1] as i32) <<  8) +
-    ((array[2] as i32) << 16) +
-    ((array[3] as i32) << 24)
+    ((array[0] as i32) << 0)
+        + ((array[1] as i32) << 8)
+        + ((array[2] as i32) << 16)
+        + ((array[3] as i32) << 24)
 }
