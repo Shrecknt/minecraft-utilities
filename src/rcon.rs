@@ -70,9 +70,10 @@ impl RconClient {
                 let built_packet = packet.build().await?;
                 stream.write_all(&built_packet).await?;
 
-                let mut res_buf: Vec<u8> = vec![];
                 stream.readable().await?;
-                let _size = stream.read_buf(&mut res_buf).await?;
+                let size = stream.read_i32_le().await?;
+                let mut res_buf: Vec<u8> = vec![0; size as usize];
+                let _size = stream.read_exact(&mut res_buf).await?;
                 let mut res_return_packet = RconPacket::new();
                 res_return_packet.parse(&res_buf).await?;
 
@@ -107,7 +108,6 @@ pub struct RconPacket {
     pub request_id: i32,
     pub request_type: i32,
     pub payload: Vec<u8>,
-    length: Option<i32>,
 }
 
 impl RconPacket {
@@ -116,7 +116,6 @@ impl RconPacket {
             request_id: 0,
             request_type: 0,
             payload: vec![],
-            length: None,
         }
     }
 
@@ -134,17 +133,15 @@ impl RconPacket {
     }
 
     pub async fn parse(&mut self, raw: &Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let length = as_i32_le(&raw[0..4].try_into().unwrap());
-        let request_id = as_i32_le(&raw[4..8].try_into().unwrap());
-        let request_type = as_i32_le(&raw[8..12].try_into().unwrap());
-        let mut payload = (&raw[13..]).to_vec();
+        let request_id = as_i32_le(&raw[0..4].try_into().unwrap());
+        let request_type = as_i32_le(&raw[4..8].try_into().unwrap());
+        let mut payload = (&raw[8..]).to_vec();
         payload.pop();
         payload.pop();
 
         self.request_id = request_id;
         self.request_type = request_type;
         self.payload = payload;
-        self.length = Some(length);
 
         Ok(())
     }
@@ -167,8 +164,8 @@ impl RconPacket {
             .replace("\\", "\\\\")
             .replace("\"", "\\\"");
         format!(
-            "{{ \"request_id\": \"{}\", \"request_type\": \"{}\", \"payload\": \"{}\", \"length\": \"{}\" }}",
-            self.request_id, self.request_type, str, self.length.unwrap_or(-1)
+            "{{ \"request_id\": \"{}\", \"request_type\": \"{}\", \"payload\": \"{}\" }}",
+            self.request_id, self.request_type, str
         )
     }
 }
