@@ -73,7 +73,10 @@ impl RconClient {
                 stream.readable().await?;
                 let size = stream.read_i32_le().await?;
                 let mut res_buf: Vec<u8> = vec![0; size as usize];
-                let _size = stream.read_exact(&mut res_buf).await?;
+                let read_res = stream.read_exact(&mut res_buf).await;
+                if read_res.is_err() {
+                    return Err("The server lied".into());
+                }
                 let mut res_return_packet = RconPacket::new();
                 res_return_packet.parse(&res_buf).await?;
 
