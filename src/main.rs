@@ -9,7 +9,14 @@ use ping::Ping;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    let test = Ping::ping("157.211.143.221:25565", None, Some("idk"), Some(25565)).await;
+    let args: Vec<String> = std::env::args().collect();
+
+    let mut test_ip = &String::from("localhost:25565");
+    if args.len() == 2 {
+        test_ip = &args[1];
+    }
+
+    let test = Ping::ping(&test_ip, None, None, None).await;
     match test {
         Ok(res) => {
             println!("Got result: {}", json::stringify_pretty(res.contents, 4));
@@ -22,7 +29,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let stdin = std::io::stdin();
     let mut iterator = stdin.lock().lines();
 
-    let default_ip = "157.211.143.221:25575";
+    let default_ip = "localhost:25575";
     println!("Enter the RCON server's ip (default '{}'):", default_ip);
     let input_ip = iterator.next().unwrap().unwrap();
     let mut ip = default_ip;
