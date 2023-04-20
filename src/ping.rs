@@ -114,23 +114,20 @@ async fn send_prefixed_packet(
 }
 
 async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> {
-    const LAST_SEVEN_BITS: i32 = 0b0111_1111;
-    const NEXT_BYTE_EXISTS: u8 = 0b1000_0000;
-
-    let mut buffer = [0u8];
-    let mut result = 0;
-    let mut read_count = 0u32;
+    let mut buf = [0u8];
+    let mut res = 0;
+    let mut count = 0u32;
     loop {
-        stream.read_exact(&mut buffer).await?;
-        result |= (buffer[0] as i32 & LAST_SEVEN_BITS)
-            .checked_shl(7 * read_count)
+        stream.read_exact(&mut buf).await?;
+        res |= (buf[0] as i32 & (0b0111_1111 as i32))
+            .checked_shl(7 * count)
             .ok_or("Unsupported protocol")?;
 
-        read_count += 1;
-        if read_count > 5 {
+        count += 1;
+        if count > 5 {
             break Err("Unsupported protocol".into());
-        } else if (buffer[0] & NEXT_BYTE_EXISTS) == 0 {
-            break Ok(result);
+        } else if (buf[0] & (0b1000_0000 as u8)) == 0 {
+            break Ok(res);
         }
     }
 }
