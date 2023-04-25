@@ -36,8 +36,8 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     }
     println!("Resolved address: {:?}", address);
 
-    let mut test_client = Client::new(lookup_ip.to_string(), None);
-    let mut future = Client::new(lookup_ip.to_string(), None);
+    let mut test_client = Client::new(address.host.clone(), Some(address.port.clone()));
+    let mut future = Client::new(address.host.clone(), Some(address.port.clone()));
     let _test_client_async = tokio::spawn(async move {
         let res = future.connect().await;
         match res {
@@ -59,7 +59,13 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let test = Ping::ping(lookup_ip, None, None, None).await;
+    let test = Ping::ping(
+        format!("{}:{}", &address.host, &address.port).as_str(),
+        None,
+        Some("shrecked.dev"),
+        Some(42069),
+    )
+    .await;
     match test {
         Ok(res) => {
             println!("Got result: {}", json::stringify_pretty(res.contents, 4));
