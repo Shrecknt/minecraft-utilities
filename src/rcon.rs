@@ -105,6 +105,13 @@ impl RconClient {
 
         Ok(res.payload_to_string())
     }
+
+    pub fn to_string(&self) -> String {
+        format!(
+            "Request ID: {}, Connected: {}, Stream: {:?}",
+            self.request_id, self.connected, self.stream
+        )
+    }
 }
 
 pub struct RconPacket {
@@ -153,14 +160,6 @@ impl RconPacket {
         self.payload.iter().map(|x| char::from(*x)).collect()
     }
 
-    pub fn print(&self) {
-        let str = self.payload_to_string();
-        println!(
-            "Request ID: {}, Request Type: {}, payload: {}",
-            self.request_id, self.request_type, str
-        );
-    }
-
     pub fn to_string(&self) -> String {
         let str = self
             .payload_to_string()
@@ -170,6 +169,12 @@ impl RconPacket {
             "{{ \"request_id\": \"{}\", \"request_type\": \"{}\", \"payload\": \"{}\" }}",
             self.request_id, self.request_type, str
         )
+    }
+}
+
+impl std::fmt::Display for RconClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
 
