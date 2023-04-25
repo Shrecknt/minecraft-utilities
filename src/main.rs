@@ -1,9 +1,6 @@
 use std::error::Error;
 use std::io::BufRead;
 
-use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
-use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};
-
 mod rcon;
 use rcon::RconClient;
 
@@ -13,37 +10,34 @@ use ping::Ping;
 mod client;
 use client::Client;
 
+mod server_address;
+use server_address::ServerAddress;
+
+mod resolve_address;
+use resolve_address::resolve_address;
+
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    let resolver = TokioAsyncResolver::new(
-        ResolverConfig::default(),
-        ResolverOpts::default(),
-        TokioHandle,
-    )
-    .unwrap();
-
     let args: Vec<String> = std::env::args().collect();
 
-    let mut test_ip = "localhost:25565";
+    let mut lookup_ip = "localhost";
     if args.len() == 2 {
-        test_ip = args[1].as_str();
+        lookup_ip = args[1].as_str();
     }
 
-    let res = resolver.lookup_ip(test_ip).await;
-    match res {
-        Ok(result) => {
-            println!(
-                "DNS Lookup: {}",
-                result.iter().next().expect("something fucked up")
-            );
+    let mut address = ServerAddress::try_from(lookup_ip).unwrap();
+    match resolve_address(&address).await {
+        Ok(res) => {
+            address = ServerAddress::from(res);
         }
         Err(err) => {
-            println!("An error occured (0): {}", err);
+            println!("An error occured (1): {}", err);
         }
     }
+    println!("Resolved address: {:?}", address);
 
-    let mut test_client = Client::new(test_ip.to_string(), None);
-    let mut future = Client::new(test_ip.to_string(), None);
+    let mut test_client = Client::new(lookup_ip.to_string(), None);
+    let mut future = Client::new(lookup_ip.to_string(), None);
     let _test_client_async = tokio::spawn(async move {
         let res = future.connect().await;
         match res {
@@ -51,7 +45,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Ok! :D");
             }
             Err(err) => {
-                println!("An error occured (1): {}", err);
+                println!("An error occured (2): {}", err);
             }
         }
     });
@@ -61,17 +55,17 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             println!("Connected!");
         }
         Err(err) => {
-            println!("An error occured (2): {}", err);
+            println!("An error occured (3): {}", err);
         }
     }
 
-    let test = Ping::ping(&test_ip, None, None, None).await;
+    let test = Ping::ping(lookup_ip, None, None, None).await;
     match test {
         Ok(res) => {
             println!("Got result: {}", json::stringify_pretty(res.contents, 4));
         }
         Err(err) => {
-            println!("An error occured (3): {}", err);
+            println!("An error occured (4): {}", err);
         }
     }
 
