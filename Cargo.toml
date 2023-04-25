@@ -6,7 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-recursion = "1.0.4"
 json = "0.12.4"
+thiserror = "1.0.40"
 tokio = { version = "1.27.0", features = ["full"] }
 trust-dns-resolver = "0.22.0"
 varint-rs = "2.2.0"
