@@ -16,6 +16,8 @@ use server_address::ServerAddress;
 mod resolve_address;
 use resolve_address::resolve_address;
 
+mod packetutil;
+
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = std::env::args().collect();
