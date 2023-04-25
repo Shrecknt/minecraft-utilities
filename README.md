@@ -1,11 +1,11 @@
 # Minecraft Rust Utilities
-Yet another project that I'm using as an exuse to learn rust
+Yet another project that I'm using as an exuse to learn Rust
 
 All utilities in this repo will be used to create a minecraft server scanning tool
 
-Based off of an old nodejs project of mine
+Based off of an old Nodejs project of mine
 
-Everything is (badly) implemented asynchronously with tokio
+Everything is (badly) implemented asynchronously with Tokio
 
 ---
 
