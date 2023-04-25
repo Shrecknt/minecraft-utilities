@@ -10,6 +10,8 @@
 //! See [`crate::connect::Connection`] for an example.
 //!
 //! Thanks mat, 'your' code is now 'our' code
+//!
+//! yoinked from https://github.com/mat-1/azalea/blob/c1588ef66e844c067112ea880a54b4de9ec5a062/azalea-protocol/src/lib.rs
 
 use std::{fmt::Display, net::SocketAddr, str::FromStr};
 

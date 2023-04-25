@@ -1,6 +1,8 @@
 //! Resolve IPs from hostnames.
 //!
 //! Thanks mat, 'your' code is now 'our' code
+//!
+//! yoinked from https://github.com/mat-1/azalea/blob/67dc5b367f67909d9679f9898c9c352e09a409fd/azalea-protocol/src/resolver.rs
 
 use async_recursion::async_recursion;
 use std::net::{IpAddr, SocketAddr};
