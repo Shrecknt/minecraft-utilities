@@ -14,13 +14,13 @@ pub struct Ping {
 impl Ping {
     pub async fn ping(
         addr: &str,
-        input_protocol_version: Option<u16>,
+        input_protocol_version: Option<usize>,
         input_hostname: Option<&str>,
         input_port: Option<u16>,
     ) -> Result<Self, Box<dyn Error>> {
         let mut val = Ping { contents: None };
 
-        const DEFAULT_PROTOCOL_VERSION: u16 = 0xf805;
+        const DEFAULT_PROTOCOL_VERSION: usize = 0xf805;
         const DEFAULT_HOSTNAME: &str = "shrecked.dev";
         const DEFAULT_PORT: u16 = 25565;
 
@@ -32,7 +32,7 @@ impl Ping {
 
         let mut connect_packet: Vec<u8> = vec![];
         connect_packet.write_u8(0x00).await?;
-        connect_packet.write_u16(protocol_version).await?; // protocol version - 760 (1.19.2)
+        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, protocol_version)?; // protocol version - 760 (1.19.2)
         varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, hostname.len())?; // host length - 12
         connect_packet.write(hostname.as_bytes()).await?; // host name - shrecked.dev
         connect_packet.write_u16(port).await?; // port number - 42069
