@@ -1,6 +1,14 @@
 use std::error::Error;
 
-use tokio::{net::TcpStream, io::{AsyncReadExt, AsyncWriteExt}};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
+
+pub struct MinecraftPacket {
+    pub buffer: Vec<u8>,
+    pub packet_id: i32,
+}
 
 pub async fn send_prefixed_packet(
     connection: &mut TcpStream,
@@ -15,10 +23,34 @@ pub async fn send_prefixed_packet(
     Ok(())
 }
 
+pub async fn get_packet(connection: &mut TcpStream) -> Result<MinecraftPacket, Box<dyn Error>> {
+    Ok(get_insane_packet(connection, 16777216).await?)
+}
+
+pub async fn get_insane_packet(
+    connection: &mut TcpStream,
+    sanity_limit: i32,
+) -> Result<MinecraftPacket, Box<dyn Error>> {
+    connection.readable().await?;
+    let len = read_varint(connection).await?;
+    if len > sanity_limit {
+        return Err("Someone is trying to DDOS you or something :eyes: (packet size varint exceeded sanity check)".into());
+    }
+    let len_usize: usize = len.try_into()?;
+    let packet_id = read_varint(connection).await?;
+    let mut res: Vec<u8> = vec![0; len_usize - 4];
+    connection.read_exact(&mut res).await?;
+    Ok(MinecraftPacket {
+        packet_id,
+        buffer: res,
+    })
+}
+
 pub async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> {
     let mut buf = [0u8];
     let mut res = 0;
     let mut count = 0u32;
+
     loop {
         stream.read_exact(&mut buf).await?;
         res |= (buf[0] as i32 & (0b0111_1111 as i32))
