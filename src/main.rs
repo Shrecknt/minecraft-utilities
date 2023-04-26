@@ -18,8 +18,24 @@ use resolve_address::resolve_address;
 
 mod packetutil;
 
+mod versions;
+use versions::parse_version;
+
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
+    if cfg!(windows) {
+        panic!("Windows user smh my head");
+    } else if cfg!(unix) {
+        println!("Based unix-like OS user");
+    }
+
+    let check_version_number = "23w16a";
+    println!(
+        "{} = {}",
+        check_version_number,
+        parse_version(check_version_number).unwrap()
+    );
+
     let args: Vec<String> = std::env::args().collect();
 
     let mut lookup_ip = "localhost";
@@ -38,23 +54,29 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     }
     println!("Resolved address: {:?}", address);
 
-    let mut test_client = Client::new(address.host.clone(), Some(address.port.clone()));
-    let mut future = Client::new(address.host.clone(), Some(address.port.clone()));
+    let mut test_client = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
+    let mut future = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
     let _test_client_async = tokio::spawn(async move {
-        let res = future.connect().await;
+        let res = future.join().await;
         match res {
-            Ok(()) => {
-                println!("Ok! :D");
+            Ok(data) => {
+                println!("Ok! :D {} {:?}", data.response_id, data.buffer);
+
+                let print: String = data.buffer.iter().map(|x| char::from(*x)).collect();
+                println!("{}", print);
             }
             Err(err) => {
                 println!("An error occured (2): {}", err);
             }
         }
     });
-    let connected = test_client.connect().await;
+    let connected = test_client.join().await;
     match connected {
-        Ok(()) => {
-            println!("Connected!");
+        Ok(data) => {
+            println!("Connected! {} {:?}", data.response_id, data.buffer);
+
+            let print: String = data.buffer.iter().map(|x| char::from(*x)).collect();
+            println!("{}", print);
         }
         Err(err) => {
             println!("An error occured (3): {}", err);
