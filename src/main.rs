@@ -1,3 +1,5 @@
+// Crimsongale is mid
+
 use std::error::Error;
 use std::io::BufRead;
 
