@@ -84,7 +84,7 @@ impl Ping {
         // length of remaining packet
         //println!("len: {}", len);
 
-        let mut data = vec![0; len as usize];
+        let mut data = vec![0; len.try_into().unwrap()];
         connection.read_exact(&mut data).await?;
 
         let source: String = data.iter().map(|x| char::from(*x)).collect();
