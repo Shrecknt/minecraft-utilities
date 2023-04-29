@@ -1,17 +1,13 @@
 use std::error::Error;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
+use uuid::Uuid;
 
-use crate::packetutil::{get_packet, send_prefixed_packet};
+use crate::packetutil::{get_packet, send_prefixed_packet, MinecraftPacket};
 
 pub struct Client {
     host: String,
     port: u16,
     connection: Option<TcpStream>,
-}
-
-pub struct ClientJoinData {
-    pub response_id: i32,
-    pub buffer: Vec<u8>,
 }
 
 impl Client {
@@ -27,10 +23,10 @@ impl Client {
         Ok(res)
     }
 
-    pub async fn join(&mut self) -> Result<ClientJoinData, Box<dyn Error>> {
+    pub async fn join(&mut self) -> Result<MinecraftPacket, Box<dyn Error>> {
         match &mut self.connection {
             Some(stream) => {
-                let protocol_version: usize = 760; // 0xf805;
+                let protocol_version: usize = 762; // 0xf805;
                 let hostname = "shrecked.dev";
                 let port = 25565;
                 let playername = "Shrecknt";
@@ -56,20 +52,24 @@ impl Client {
                 )?;
                 login_start_packet.write(playername.as_bytes()).await?;
                 login_start_packet.write_u8(0x01).await?;
+                let uuid = Uuid::new_v4();
+                login_start_packet.write(uuid.as_bytes()).await?;
 
                 send_prefixed_packet(stream, &login_start_packet).await?;
 
                 println!("{:?}", stream);
 
                 let result = get_packet(stream).await?;
-                return Ok(ClientJoinData {
-                    response_id: result.packet_id,
-                    buffer: result.buffer,
-                });
+                return Ok(result);
             }
             None => {
                 return Err("No connection, cannot join".into());
             }
         }
+    }
+
+    pub async fn check_online_mode(&mut self) -> Result<bool, Box<dyn Error>> {
+        let res = self.join().await?;
+        Ok(res.packet_id == 0x01)
     }
 }

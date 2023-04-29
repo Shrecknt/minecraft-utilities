@@ -31,28 +31,29 @@ pub async fn get_insane_packet(
     connection: &mut TcpStream,
     sanity_limit: i32,
 ) -> Result<MinecraftPacket, Box<dyn Error>> {
-    println!("- 1");
     connection.readable().await?;
-    println!("- 2");
     let len = read_varint(connection).await?;
-    println!("- 3");
     if len > sanity_limit {
         return Err("Someone is trying to DDOS you or something :eyes: (packet size varint exceeded sanity check)".into());
     }
-    println!("- 4");
-    let len_usize: usize = len.try_into()?;
-    println!("- 5");
+    let mut len_usize: usize = len.try_into()?;
+    let (packet_id_len, packet_id_data) = read_varint_len(connection).await?;
+    let packet_id_length: usize = packet_id_len.try_into().unwrap();
+    len_usize = len_usize - packet_id_length;
     let mut res: Vec<u8> = vec![0; len_usize];
-    println!("- 6");
     connection.read_exact(&mut res).await?;
-    println!("- 7");
     Ok(MinecraftPacket {
-        packet_id: -1,
+        packet_id: packet_id_data,
         buffer: res,
     })
 }
 
 pub async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> {
+    let (_len, data) = read_varint_len(stream).await?;
+    Ok(data)
+}
+
+pub async fn read_varint_len(stream: &mut TcpStream) -> Result<(u32, i32), Box<dyn Error>> {
     let mut buf = [0u8];
     let mut res = 0;
     let mut count = 0u32;
@@ -60,7 +61,6 @@ pub async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> 
     loop {
         stream.readable().await?;
         stream.read_exact(&mut buf).await?;
-        println!("buf {:?}", buf);
         res |= (buf[0] as i32 & (0b0111_1111 as i32))
             .checked_shl(7 * count)
             .ok_or("Unsupported protocol")?;
@@ -69,7 +69,7 @@ pub async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> 
         if count > 5 {
             break Err("Unsupported protocol".into());
         } else if (buf[0] & (0b1000_0000 as u8)) == 0 {
-            break Ok(res);
+            break Ok((count, res));
         }
     }
 }

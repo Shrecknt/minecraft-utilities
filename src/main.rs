@@ -26,7 +26,7 @@ use versions::parse_version;
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
     if cfg!(windows) {
-        panic!("Windows user smh my head");
+        println!("Windows user smh my head");
     } else if cfg!(unix) {
         println!("Based unix-like OS user");
     }
@@ -59,13 +59,13 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     // let mut test_client = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
     let mut future = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
     let _test_client_async = tokio::spawn(async move {
-        let res = future.join().await;
+        let res = future.check_online_mode().await;
         match res {
-            Ok(data) => {
-                println!("Ok! :D {} {:?}", data.response_id, data.buffer);
+            Ok(result) => {
+                println!("Online mode: {}", result);
 
-                let print: String = data.buffer.iter().map(|x| char::from(*x)).collect();
-                println!("{}", print);
+                // let print: String = data.iter().map(|x| char::from(*x)).collect();
+                // println!("{}", print);
             }
             Err(err) => {
                 println!("An error occured (2): {}", err);
@@ -93,7 +93,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     )
     .await;
     match test {
-        Ok(res) => {
+        Ok(_res) => {
             // println!("Got result: {}", json::stringify_pretty(res.contents, 4));
             println!("yay got results from ping");
         }
