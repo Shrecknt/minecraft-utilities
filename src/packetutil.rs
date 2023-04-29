@@ -16,7 +16,7 @@ pub async fn send_prefixed_packet(
 ) -> Result<(), Box<dyn Error>> {
     let mut buffer: Vec<u8> = vec![];
     varint_rs::VarintWriter::write_usize_varint(&mut buffer, data.len())?;
-    buffer.write(&data).await?;
+    buffer.write_all(data).await?;
 
     connection.write_all(&buffer).await?;
 
@@ -24,7 +24,7 @@ pub async fn send_prefixed_packet(
 }
 
 pub async fn get_packet(connection: &mut TcpStream) -> Result<MinecraftPacket, Box<dyn Error>> {
-    Ok(get_insane_packet(connection, 16777216).await?)
+    get_insane_packet(connection, 16777216).await
 }
 
 pub async fn get_insane_packet(
@@ -39,7 +39,7 @@ pub async fn get_insane_packet(
     let mut len_usize: usize = len.try_into()?;
     let (packet_id_len, packet_id_data) = read_varint_len(connection).await?;
     let packet_id_length: usize = packet_id_len.try_into().unwrap();
-    len_usize = len_usize - packet_id_length;
+    len_usize -= packet_id_length;
     let mut res: Vec<u8> = vec![0; len_usize];
     connection.read_exact(&mut res).await?;
     Ok(MinecraftPacket {
@@ -61,14 +61,14 @@ pub async fn read_varint_len(stream: &mut TcpStream) -> Result<(u32, i32), Box<d
     loop {
         stream.readable().await?;
         stream.read_exact(&mut buf).await?;
-        res |= (buf[0] as i32 & (0b0111_1111 as i32))
+        res |= (buf[0] as i32 & (0b0111_1111_i32))
             .checked_shl(7 * count)
             .ok_or("Unsupported protocol")?;
 
         count += 1;
         if count > 5 {
             break Err("Unsupported protocol".into());
-        } else if (buf[0] & (0b1000_0000 as u8)) == 0 {
+        } else if (buf[0] & (0b1000_0000_u8)) == 0 {
             break Ok((count, res));
         }
     }

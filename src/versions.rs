@@ -4,13 +4,13 @@ pub fn parse_version(version_name: &str) -> Result<i32, String> {
     let res = VERSIONS.get(version_name);
     match res {
         Some(val) => {
-            return Ok(*val);
+            Ok(*val)
         }
         None => {
-            return Err(format!(
+            Err(format!(
                 "Unable to find version '{}' in version table",
                 version_name
-            ));
+            ))
         }
     }
 }

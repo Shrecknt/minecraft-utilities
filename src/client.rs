@@ -38,7 +38,7 @@ impl Client {
                     &mut connect_packet,
                     hostname.as_bytes().len(),
                 )?; // host length - 12
-                connect_packet.write(hostname.as_bytes()).await?; // host name - shrecked.dev
+                connect_packet.write_all(hostname.as_bytes()).await?; // host name - shrecked.dev
                 connect_packet.write_u16(port).await?; // port number - 42069
                 connect_packet.write_u8(0x02).await?; // next state - 2 (login)
 
@@ -50,20 +50,20 @@ impl Client {
                     &mut login_start_packet,
                     playername.as_bytes().len(),
                 )?;
-                login_start_packet.write(playername.as_bytes()).await?;
+                login_start_packet.write_all(playername.as_bytes()).await?;
                 login_start_packet.write_u8(0x01).await?;
                 let uuid = Uuid::new_v4();
-                login_start_packet.write(uuid.as_bytes()).await?;
+                login_start_packet.write_all(uuid.as_bytes()).await?;
 
                 send_prefixed_packet(stream, &login_start_packet).await?;
 
                 println!("{:?}", stream);
 
                 let result = get_packet(stream).await?;
-                return Ok(result);
+                Ok(result)
             }
             None => {
-                return Err("No connection, cannot join".into());
+                Err("No connection, cannot join".into())
             }
         }
     }

@@ -34,7 +34,7 @@ impl Ping {
         connect_packet.write_u8(0x00).await?;
         varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, protocol_version)?; // protocol version - 760 (1.19.2)
         varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, hostname.len())?; // host length - 12
-        connect_packet.write(hostname.as_bytes()).await?; // host name - shrecked.dev
+        connect_packet.write_all(hostname.as_bytes()).await?; // host name - shrecked.dev
         connect_packet.write_u16(port).await?; // port number - 42069
         connect_packet.write_u8(0x01).await?; // next state - 1 (ping)
 
@@ -53,10 +53,10 @@ impl Ping {
         let parse_res = val.generate_contents(&mut connection).await;
         match parse_res {
             Ok(_) => {
-                return Ok(val);
+                Ok(val)
             }
             Err(err) => {
-                return Err(err);
+                Err(err)
             }
         }
     }
@@ -93,7 +93,7 @@ impl Ping {
                 Ok(())
             }
             Err(err) => {
-                return Err(err.into());
+                Err(err.into())
             }
         }
     }
