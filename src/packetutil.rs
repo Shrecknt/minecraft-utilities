@@ -31,17 +31,23 @@ pub async fn get_insane_packet(
     connection: &mut TcpStream,
     sanity_limit: i32,
 ) -> Result<MinecraftPacket, Box<dyn Error>> {
+    println!("- 1");
     connection.readable().await?;
+    println!("- 2");
     let len = read_varint(connection).await?;
+    println!("- 3");
     if len > sanity_limit {
         return Err("Someone is trying to DDOS you or something :eyes: (packet size varint exceeded sanity check)".into());
     }
+    println!("- 4");
     let len_usize: usize = len.try_into()?;
-    let packet_id = read_varint(connection).await?;
-    let mut res: Vec<u8> = vec![0; len_usize - 4];
+    println!("- 5");
+    let mut res: Vec<u8> = vec![0; len_usize];
+    println!("- 6");
     connection.read_exact(&mut res).await?;
+    println!("- 7");
     Ok(MinecraftPacket {
-        packet_id,
+        packet_id: -1,
         buffer: res,
     })
 }
@@ -52,7 +58,9 @@ pub async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> 
     let mut count = 0u32;
 
     loop {
+        stream.readable().await?;
         stream.read_exact(&mut buf).await?;
+        println!("buf {:?}", buf);
         res |= (buf[0] as i32 & (0b0111_1111 as i32))
             .checked_shl(7 * count)
             .ok_or("Unsupported protocol")?;

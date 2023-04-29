@@ -56,7 +56,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     }
     println!("Resolved address: {:?}", address);
 
-    let mut test_client = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
+    // let mut test_client = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
     let mut future = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
     let _test_client_async = tokio::spawn(async move {
         let res = future.join().await;
@@ -72,18 +72,18 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     });
-    let connected = test_client.join().await;
-    match connected {
-        Ok(data) => {
-            println!("Connected! {} {:?}", data.response_id, data.buffer);
+    // let connected = test_client.join().await;
+    // match connected {
+    //     Ok(data) => {
+    //         println!("Connected! {} {:?}", data.response_id, data.buffer);
 
-            let print: String = data.buffer.iter().map(|x| char::from(*x)).collect();
-            println!("{}", print);
-        }
-        Err(err) => {
-            println!("An error occured (3): {}", err);
-        }
-    }
+    //         let print: String = data.buffer.iter().map(|x| char::from(*x)).collect();
+    //         println!("{}", print);
+    //     }
+    //     Err(err) => {
+    //         println!("An error occured (3): {}", err);
+    //     }
+    // }
 
     let test = Ping::ping(
         format!("{}:{}", &address.host, &address.port).as_str(),
@@ -94,7 +94,8 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     .await;
     match test {
         Ok(res) => {
-            println!("Got result: {}", json::stringify_pretty(res.contents, 4));
+            // println!("Got result: {}", json::stringify_pretty(res.contents, 4));
+            println!("yay got results from ping");
         }
         Err(err) => {
             println!("An error occured (4): {}", err);
