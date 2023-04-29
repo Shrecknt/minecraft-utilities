@@ -65,8 +65,6 @@ impl Ping {
         &mut self,
         connection: &mut TcpStream,
     ) -> Result<(), Box<dyn Error>> {
-        println!("wut");
-
         //let mut debug_buf: Vec<u8> = vec![];
         //connection.read_buf(&mut debug_buf).await?;
         //println!("debug_buf: {:?}", debug_buf);
