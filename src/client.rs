@@ -57,8 +57,6 @@ impl Client {
 
                 send_prefixed_packet(stream, &login_start_packet).await?;
 
-                println!("{:?}", stream);
-
                 let result = get_packet(stream).await?;
                 Ok(result)
             }
