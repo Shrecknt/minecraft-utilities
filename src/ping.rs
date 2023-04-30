@@ -1,4 +1,4 @@
-use json::JsonValue;
+use serde_json::Value;
 use std::{error::Error, vec};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -8,9 +8,7 @@ use tokio::{
 use crate::packetutil::{read_varint, send_prefixed_packet};
 
 #[derive(Debug)]
-pub struct Ping {
-    pub contents: Option<JsonValue>,
-}
+pub struct Ping {}
 
 impl Ping {
     pub async fn ping(
@@ -18,10 +16,8 @@ impl Ping {
         input_protocol_version: Option<usize>,
         input_hostname: Option<&str>,
         input_port: Option<u16>,
-    ) -> Result<Self, Box<dyn Error>> {
-        let mut val = Ping { contents: None };
-
-        const DEFAULT_PROTOCOL_VERSION: usize = 0xf805;
+    ) -> Result<Value, Box<dyn Error>> {
+        const DEFAULT_PROTOCOL_VERSION: usize = 0xf807;
         const DEFAULT_HOSTNAME: &str = "shrecked.dev";
         const DEFAULT_PORT: u16 = 25565;
 
@@ -33,7 +29,7 @@ impl Ping {
 
         let mut connect_packet: Vec<u8> = vec![];
         connect_packet.write_u8(0x00).await?;
-        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, protocol_version)?; // protocol version - 760 (1.19.2)
+        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, protocol_version)?; // protocol version - 762 (1.19.4)
         varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, hostname.len())?; // host length - 12
         connect_packet.write_all(hostname.as_bytes()).await?; // host name - shrecked.dev
         connect_packet.write_u16(port).await?; // port number - 42069
@@ -51,17 +47,14 @@ impl Ping {
         send_prefixed_packet(&mut connection, &ping_packet).await?;
 
         connection.readable().await?;
-        let parse_res = val.generate_contents(&mut connection).await;
+        let parse_res = Ping::generate_contents(&mut connection).await;
         match parse_res {
-            Ok(_) => Ok(val),
+            Ok(v) => Ok(v),
             Err(err) => Err(err),
         }
     }
 
-    async fn generate_contents(
-        &mut self,
-        connection: &mut TcpStream,
-    ) -> Result<(), Box<dyn Error>> {
+    async fn generate_contents(connection: &mut TcpStream) -> Result<Value, Box<dyn Error>> {
         //let mut debug_buf: Vec<u8> = vec![];
         //connection.read_buf(&mut debug_buf).await?;
         //println!("debug_buf: {:?}", debug_buf);
@@ -83,12 +76,9 @@ impl Ping {
         connection.read_exact(&mut data).await?;
 
         let source: String = data.iter().map(|x| char::from(*x)).collect();
-        let res = json::parse(&source);
+        let res: Result<Value, serde_json::Error> = serde_json::from_str(&source);
         match res {
-            Ok(contents) => {
-                self.contents = Some(contents);
-                Ok(())
-            }
+            Ok(contents) => Ok(contents),
             Err(err) => Err(err.into()),
         }
     }

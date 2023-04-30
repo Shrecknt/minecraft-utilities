@@ -51,7 +51,7 @@ impl Client {
                 varint_rs::VarintWriter::write_usize_varint(
                     &mut connect_packet,
                     resolved_protocol_version,
-                )?; // protocol version - 760 (1.19.2)
+                )?; // protocol version - 762 (1.19.4)
                 varint_rs::VarintWriter::write_usize_varint(
                     &mut connect_packet,
                     resolved_hostname.as_bytes().len(),
