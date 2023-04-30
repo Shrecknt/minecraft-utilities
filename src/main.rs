@@ -25,12 +25,6 @@ use versions::parse_version;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    if cfg!(windows) {
-        println!("Windows user smh my head");
-    } else if cfg!(unix) {
-        println!("Based unix-like OS user");
-    }
-
     let check_version_number = "23w16a";
     println!(
         "{} = {}",
