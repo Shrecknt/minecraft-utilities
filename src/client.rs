@@ -96,7 +96,6 @@ impl Client {
         let res = self
             .join(protocol_version, hostname, port, playername)
             .await?;
-        println!("packet_id: {}", res.packet_id);
         if res.packet_id == 0x00 {
             Ok(OnlineModeResults::Kicked)
         } else if res.packet_id == 0x01 {
