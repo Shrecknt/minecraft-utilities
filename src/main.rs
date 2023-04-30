@@ -58,7 +58,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             .await;
         match res {
             Ok(result) => {
-                println!("Online mode: {}", result);
+                println!("Online mode: {:?}", result);
 
                 // let print: String = data.iter().map(|x| char::from(*x)).collect();
                 // println!("{}", print);
