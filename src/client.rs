@@ -23,23 +23,34 @@ impl Client {
         Ok(res)
     }
 
-    pub async fn join(&mut self) -> Result<MinecraftPacket, Box<dyn Error>> {
+    pub async fn join(
+        &mut self,
+        protocol_version: Option<usize>,
+        hostname: Option<&str>,
+        port: Option<u16>,
+        playername: Option<&str>,
+    ) -> Result<MinecraftPacket, Box<dyn Error>> {
         match &mut self.connection {
             Some(stream) => {
-                let protocol_version: usize = 762; // 0xf805;
-                let hostname = "shrecked.dev";
-                let port = 25565;
-                let playername = "Shrecknt";
+                let resolved_protocol_version: usize = protocol_version.unwrap_or(762);
+                let resolved_hostname = hostname.unwrap_or("shrecked.dev");
+                let resolved_port = port.unwrap_or(25565);
+                let resolved_playername = playername.unwrap_or("Shrecknt");
 
                 let mut connect_packet: Vec<u8> = vec![];
                 connect_packet.write_u8(0x00).await?;
-                varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, protocol_version)?; // protocol version - 760 (1.19.2)
                 varint_rs::VarintWriter::write_usize_varint(
                     &mut connect_packet,
-                    hostname.as_bytes().len(),
+                    resolved_protocol_version,
+                )?; // protocol version - 760 (1.19.2)
+                varint_rs::VarintWriter::write_usize_varint(
+                    &mut connect_packet,
+                    resolved_hostname.as_bytes().len(),
                 )?; // host length - 12
-                connect_packet.write_all(hostname.as_bytes()).await?; // host name - shrecked.dev
-                connect_packet.write_u16(port).await?; // port number - 42069
+                connect_packet
+                    .write_all(resolved_hostname.as_bytes())
+                    .await?; // host name - shrecked.dev
+                connect_packet.write_u16(resolved_port).await?; // port number - 42069
                 connect_packet.write_u8(0x02).await?; // next state - 2 (login)
 
                 send_prefixed_packet(stream, &connect_packet).await?;
@@ -48,9 +59,11 @@ impl Client {
                 login_start_packet.write_u8(0x00).await?;
                 varint_rs::VarintWriter::write_usize_varint(
                     &mut login_start_packet,
-                    playername.as_bytes().len(),
+                    resolved_playername.as_bytes().len(),
                 )?;
-                login_start_packet.write_all(playername.as_bytes()).await?;
+                login_start_packet
+                    .write_all(resolved_playername.as_bytes())
+                    .await?;
                 login_start_packet.write_u8(0x01).await?;
                 let uuid = Uuid::new_v4();
                 login_start_packet.write_all(uuid.as_bytes()).await?;
@@ -60,14 +73,20 @@ impl Client {
                 let result = get_packet(stream).await?;
                 Ok(result)
             }
-            None => {
-                Err("No connection, cannot join".into())
-            }
+            None => Err("No connection, cannot join".into()),
         }
     }
 
-    pub async fn check_online_mode(&mut self) -> Result<bool, Box<dyn Error>> {
-        let res = self.join().await?;
+    pub async fn check_online_mode(
+        &mut self,
+        protocol_version: Option<usize>,
+        hostname: Option<&str>,
+        port: Option<u16>,
+        playername: Option<&str>,
+    ) -> Result<bool, Box<dyn Error>> {
+        let res = self
+            .join(protocol_version, hostname, port, playername)
+            .await?;
         Ok(res.packet_id == 0x01)
     }
 }

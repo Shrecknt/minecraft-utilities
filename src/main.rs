@@ -53,7 +53,9 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     // let mut test_client = Client::connect(address.host.clone(), Some(address.port.clone())).await?;
     let mut future = Client::connect(address.host.clone(), Some(address.port)).await?;
     let _test_client_async = tokio::spawn(async move {
-        let res = future.check_online_mode().await;
+        let res = future
+            .check_online_mode(None, None, None, Some("gamer"))
+            .await;
         match res {
             Ok(result) => {
                 println!("Online mode: {}", result);
