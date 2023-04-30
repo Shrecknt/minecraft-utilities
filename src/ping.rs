@@ -7,6 +7,7 @@ use tokio::{
 
 use crate::packetutil::{read_varint, send_prefixed_packet};
 
+#[derive(Debug)]
 pub struct Ping {
     pub contents: Option<JsonValue>,
 }
@@ -52,12 +53,8 @@ impl Ping {
         connection.readable().await?;
         let parse_res = val.generate_contents(&mut connection).await;
         match parse_res {
-            Ok(_) => {
-                Ok(val)
-            }
-            Err(err) => {
-                Err(err)
-            }
+            Ok(_) => Ok(val),
+            Err(err) => Err(err),
         }
     }
 
@@ -92,9 +89,7 @@ impl Ping {
                 self.contents = Some(contents);
                 Ok(())
             }
-            Err(err) => {
-                Err(err.into())
-            }
+            Err(err) => Err(err.into()),
         }
     }
 }

@@ -4,6 +4,7 @@ use tokio::{
     net::TcpStream,
 };
 
+#[derive(Debug)]
 pub struct RconClient {
     request_id: i32,
     connected: bool,
@@ -105,6 +106,7 @@ impl RconClient {
     }
 }
 
+#[derive(Debug)]
 pub struct RconPacket {
     pub request_id: i32,
     pub request_type: i32,

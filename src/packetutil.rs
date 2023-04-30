@@ -5,6 +5,7 @@ use tokio::{
     net::TcpStream,
 };
 
+#[derive(Debug)]
 pub struct MinecraftPacket {
     pub buffer: Vec<u8>,
     pub packet_id: i32,

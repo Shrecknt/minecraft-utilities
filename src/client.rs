@@ -4,6 +4,15 @@ use uuid::Uuid;
 
 use crate::packetutil::{get_packet, send_prefixed_packet, MinecraftPacket};
 
+#[derive(Debug)]
+pub enum OnlineModeResults {
+    OnlineMode,
+    OfflineMode,
+    Kicked,
+    UnknownProtocol,
+}
+
+#[derive(Debug)]
 pub struct Client {
     host: String,
     port: u16,
@@ -83,10 +92,19 @@ impl Client {
         hostname: Option<&str>,
         port: Option<u16>,
         playername: Option<&str>,
-    ) -> Result<bool, Box<dyn Error>> {
+    ) -> Result<OnlineModeResults, Box<dyn Error>> {
         let res = self
             .join(protocol_version, hostname, port, playername)
             .await?;
-        Ok(res.packet_id == 0x01)
+        println!("packet_id: {}", res.packet_id);
+        if res.packet_id == 0x00 {
+            Ok(OnlineModeResults::Kicked)
+        } else if res.packet_id == 0x01 {
+            Ok(OnlineModeResults::OnlineMode)
+        } else if res.packet_id == 0x03 {
+            Ok(OnlineModeResults::OfflineMode)
+        } else {
+            Ok(OnlineModeResults::UnknownProtocol)
+        }
     }
 }
