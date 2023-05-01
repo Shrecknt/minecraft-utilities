@@ -108,7 +108,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let test_is_online_mode =
         test_client.check_online_mode(Some(protocol_ver), None, None, Some("gamer"));
     let is_online_mode_result = timeout(Duration::from_millis(1000), test_is_online_mode).await??;
-    println!("Onlune mode results: {:?}", is_online_mode_result);
+    println!("Online mode results: {:?}", is_online_mode_result);
 
     let stdin = std::io::stdin();
     let mut iterator = stdin.lock().lines();
