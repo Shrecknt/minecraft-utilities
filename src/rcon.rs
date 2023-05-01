@@ -12,14 +12,18 @@ pub struct RconClient {
 }
 
 impl RconClient {
-    pub async fn connect(addr: &str, password: Option<&str>) -> Result<Self, Box<dyn Error>> {
+    pub async fn connect(
+        host: &str,
+        port: Option<u16>,
+        password: Option<&str>,
+    ) -> Result<Self, Box<dyn Error>> {
         let mut client = RconClient {
             request_id: 0,
             connected: false,
             stream: None,
         };
 
-        let connection = TcpStream::connect(addr).await?;
+        let connection = TcpStream::connect(format!("{}:{}", host, port.unwrap_or(25575))).await?;
 
         client.stream = Some(connection);
         client.connected = true;
