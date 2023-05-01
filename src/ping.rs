@@ -12,7 +12,8 @@ pub struct Ping {}
 
 impl Ping {
     pub async fn ping(
-        addr: &str,
+        host: &str,
+        port: Option<u16>,
         input_protocol_version: Option<usize>,
         input_hostname: Option<&str>,
         input_port: Option<u16>,
@@ -21,18 +22,19 @@ impl Ping {
         const DEFAULT_HOSTNAME: &str = "shrecked.dev";
         const DEFAULT_PORT: u16 = 25565;
 
-        let protocol_version = input_protocol_version.unwrap_or(DEFAULT_PROTOCOL_VERSION);
-        let hostname = input_hostname.unwrap_or(DEFAULT_HOSTNAME);
-        let port = input_port.unwrap_or(DEFAULT_PORT);
+        let send_protocol_version = input_protocol_version.unwrap_or(DEFAULT_PROTOCOL_VERSION);
+        let send_hostname = input_hostname.unwrap_or(DEFAULT_HOSTNAME);
+        let send_port = input_port.unwrap_or(DEFAULT_PORT);
 
-        let mut connection = TcpStream::connect(addr).await?;
+        let mut connection =
+            TcpStream::connect(format!("{}:{}", host, port.unwrap_or(25565))).await?;
 
         let mut connect_packet: Vec<u8> = vec![];
         connect_packet.write_u8(0x00).await?;
-        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, protocol_version)?; // protocol version - 762 (1.19.4)
-        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, hostname.len())?; // host length - 12
-        connect_packet.write_all(hostname.as_bytes()).await?; // host name - shrecked.dev
-        connect_packet.write_u16(port).await?; // port number - 42069
+        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, send_protocol_version)?; // protocol version - 762 (1.19.4)
+        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, send_hostname.len())?; // host length - 12
+        connect_packet.write_all(send_hostname.as_bytes()).await?; // host name - shrecked.dev
+        connect_packet.write_u16(send_port).await?; // port number - 42069
         connect_packet.write_u8(0x01).await?; // next state - 1 (ping)
 
         send_prefixed_packet(&mut connection, &connect_packet).await?;

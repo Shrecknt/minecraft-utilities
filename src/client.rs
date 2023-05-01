@@ -20,9 +20,9 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn connect(host: String, port: Option<u16>) -> Result<Self, Box<dyn Error>> {
+    pub async fn connect(host: &str, port: Option<u16>) -> Result<Self, Box<dyn Error>> {
         let mut res = Client {
-            host,
+            host: String::from(host),
             port: port.unwrap_or(25565),
             connection: None,
         };

@@ -86,8 +86,13 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut protocol_ver: usize = 0;
 
-    let addr = &format!("{}:{}", &address.host, &address.port);
-    let test_ping = Ping::ping(addr, None, Some("shrecked.dev"), Some(42069));
+    let test_ping = Ping::ping(
+        &address.host,
+        Some(address.port),
+        None,
+        Some("shrecked.dev"),
+        Some(42069),
+    );
     let ping_result = timeout(Duration::from_millis(1000), test_ping).await?;
     match ping_result {
         Ok(res) => {
@@ -103,7 +108,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Protocol version: {}", protocol_ver);
 
-    let mut test_client = Client::connect(address.host, Some(address.port)).await?;
+    let mut test_client = Client::connect(&address.host, Some(address.port)).await?;
     let test_is_online_mode =
         test_client.check_online_mode(Some(protocol_ver), None, None, Some("gamer"));
     let is_online_mode_result = timeout(Duration::from_millis(1000), test_is_online_mode).await??;
