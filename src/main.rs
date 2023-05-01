@@ -93,8 +93,10 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     match test {
         Ok(res) => {
             println!("yay got results from ping");
-            let get_protocol_ver = res["version"]["protocol"].clone().as_i64().unwrap_or(762);
-            protocol_ver = get_protocol_ver.try_into().unwrap();
+            protocol_ver = Ping::get_protocol_version(res)
+                .unwrap_or(762)
+                .try_into()
+                .unwrap();
         }
         Err(err) => {
             println!("An error occured (4): {}", err);

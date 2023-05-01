@@ -82,4 +82,12 @@ impl Ping {
             Err(err) => Err(err.into()),
         }
     }
+
+    pub fn get_protocol_version(json: Value) -> Result<i32, Box<dyn Error>> {
+        let val = json["version"]["protocol"].clone().as_i64();
+        match val {
+            Some(res) => Ok(res.try_into().unwrap()),
+            None => Err("Could not find protocol version".into()),
+        }
+    }
 }
