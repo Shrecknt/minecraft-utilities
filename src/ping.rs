@@ -35,51 +35,31 @@ impl Ping {
         connect_packet.write_u16(port).await?; // port number - 42069
         connect_packet.write_u8(0x01).await?; // next state - 1 (ping)
 
-        //println!("Sending: {:?}", connect_packet);
-
         send_prefixed_packet(&mut connection, &connect_packet).await?;
 
         let mut ping_packet: Vec<u8> = vec![];
         ping_packet.write_u8(0x00).await?;
 
-        //println!("Sending: {:?}", ping_packet);
-
         send_prefixed_packet(&mut connection, &ping_packet).await?;
 
         connection.readable().await?;
-        let parse_res = Ping::generate_contents(&mut connection).await;
-        match parse_res {
-            Ok(v) => Ok(v),
-            Err(err) => Err(err),
-        }
-    }
 
-    async fn generate_contents(connection: &mut TcpStream) -> Result<Value, Box<dyn Error>> {
-        //let mut debug_buf: Vec<u8> = vec![];
-        //connection.read_buf(&mut debug_buf).await?;
-        //println!("debug_buf: {:?}", debug_buf);
-
-        let _debug_0 = read_varint(connection).await?;
-        // total packet length - ignore
-        //println!("_debug_0: {}", _debug_0);
-
+        let _debug_0 = read_varint(&mut connection).await?;
         let _debug_1 = connection.read_u8().await?;
-        assert_eq!(_debug_1, 0x00);
-        // packet id - 0x00
-        //println!("_debug_1: {}", _debug_1);
-
-        let len = read_varint(connection).await?;
-        // length of remaining packet
-        //println!("len: {}", len);
+        if _debug_1 != 0x00 {
+            return Err("Invalid response".into());
+        }
+        let len = read_varint(&mut connection).await?;
 
         let mut data = vec![0; len.try_into().unwrap()];
         connection.read_exact(&mut data).await?;
 
         let source: String = data.iter().map(|x| char::from(*x)).collect();
-        let res: Result<Value, serde_json::Error> = serde_json::from_str(&source);
-        match res {
-            Ok(contents) => Ok(contents),
-            Err(err) => Err(err.into()),
+        let parse_res = serde_json::from_str(&source);
+
+        match parse_res {
+            Ok(v) => Ok(v),
+            Err(err) => Err(Box::new(err)),
         }
     }
 
