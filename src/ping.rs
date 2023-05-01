@@ -60,7 +60,7 @@ impl Ping {
         Ok(parse_res?)
     }
 
-    pub fn get_protocol_version(json: Value) -> Result<i32, Box<dyn Error>> {
+    pub fn get_protocol_version(json: &Value) -> Result<i32, Box<dyn Error>> {
         let val = json["version"]["protocol"].clone().as_i64();
         match val {
             Some(res) => Ok(res.try_into().unwrap()),
