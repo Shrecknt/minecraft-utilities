@@ -91,8 +91,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let ping_result = timeout(Duration::from_millis(1000), test_ping).await?;
     match ping_result {
         Ok(res) => {
-            println!("yay got results from ping");
-            protocol_ver = Ping::get_protocol_version(res)
+            protocol_ver = Ping::get_protocol_version(&res)
                 .unwrap_or(762)
                 .try_into()
                 .unwrap();
