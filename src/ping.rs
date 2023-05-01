@@ -55,12 +55,9 @@ impl Ping {
         connection.read_exact(&mut data).await?;
 
         let source: String = data.iter().map(|x| char::from(*x)).collect();
-        let parse_res = serde_json::from_str(&source);
+        let parse_res: Result<Value, serde_json::Error> = serde_json::from_str(&source);
 
-        match parse_res {
-            Ok(v) => Ok(v),
-            Err(err) => Err(Box::new(err)),
-        }
+        Ok(parse_res?)
     }
 
     pub fn get_protocol_version(json: Value) -> Result<i32, Box<dyn Error>> {
