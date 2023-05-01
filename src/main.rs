@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::io::BufRead;
+use std::time::Duration;
 
 mod rcon;
 use rcon::RconClient;
@@ -22,6 +23,8 @@ mod packetutil;
 
 mod versions;
 use versions::parse_version;
+
+use tokio::time::timeout;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
@@ -83,14 +86,10 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut protocol_ver: usize = 0;
 
-    let test = Ping::ping(
-        format!("{}:{}", &address.host, &address.port).as_str(),
-        None,
-        Some("shrecked.dev"),
-        Some(42069),
-    )
-    .await;
-    match test {
+    let addr = &format!("{}:{}", &address.host, &address.port);
+    let test_ping = Ping::ping(addr, None, Some("shrecked.dev"), Some(42069));
+    let ping_result = timeout(Duration::from_millis(1000), test_ping).await?;
+    match ping_result {
         Ok(res) => {
             println!("yay got results from ping");
             protocol_ver = Ping::get_protocol_version(res)
@@ -106,10 +105,10 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     println!("Protocol version: {}", protocol_ver);
 
     let mut test_client = Client::connect(address.host, Some(address.port)).await?;
-    let is_online_mode = test_client
-        .check_online_mode(Some(protocol_ver), None, None, Some("gamer"))
-        .await?;
-    println!("Onlune mode results: {:?}", is_online_mode);
+    let test_is_online_mode =
+        test_client.check_online_mode(Some(protocol_ver), None, None, Some("gamer"));
+    let is_online_mode_result = timeout(Duration::from_millis(1000), test_is_online_mode).await??;
+    println!("Onlune mode results: {:?}", is_online_mode_result);
 
     let stdin = std::io::stdin();
     let mut iterator = stdin.lock().lines();
