@@ -80,7 +80,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     //     }
     // }
 
-    let mut protocol_ver: usize = 0;
+    let mut protocol_ver: i32 = 0;
 
     let test_ping = Ping::ping(
         &address.host,
@@ -91,12 +91,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     );
     let ping_result = timeout(Duration::from_millis(1000), test_ping).await?;
     match ping_result {
-        Ok(res) => {
-            protocol_ver = Ping::get_protocol_version(&res)
-                .unwrap_or(762)
-                .try_into()
-                .unwrap();
-        }
+        Ok(res) => protocol_ver = Ping::get_protocol_version(&res).unwrap(),
         Err(err) => {
             println!("An error occured (4): {}", err);
         }

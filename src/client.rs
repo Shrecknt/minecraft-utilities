@@ -2,7 +2,7 @@ use std::error::Error;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 use uuid::Uuid;
 
-use crate::packetutil::{get_packet, send_prefixed_packet, MinecraftPacket};
+use crate::packetutil::{get_packet, send_prefixed_packet, write_varint, MinecraftPacket};
 
 #[derive(Debug)]
 pub enum OnlineModeResults {
@@ -34,28 +34,26 @@ impl Client {
 
     pub async fn join(
         &mut self,
-        protocol_version: Option<usize>,
+        protocol_version: Option<i32>,
         hostname: Option<&str>,
         port: Option<u16>,
         playername: Option<&str>,
     ) -> Result<MinecraftPacket, Box<dyn Error>> {
         match &mut self.connection {
             Some(stream) => {
-                let resolved_protocol_version: usize = protocol_version.unwrap_or(762);
+                let resolved_protocol_version: i32 = protocol_version.unwrap_or(762);
                 let resolved_hostname = hostname.unwrap_or("shrecked.dev");
                 let resolved_port = port.unwrap_or(25565);
                 let resolved_playername = playername.unwrap_or("Shrecknt");
 
                 let mut connect_packet: Vec<u8> = vec![];
                 connect_packet.write_u8(0x00).await?;
-                varint_rs::VarintWriter::write_usize_varint(
+                write_varint(&mut connect_packet, resolved_protocol_version).await?; // protocol version - 762 (1.19.4)
+                write_varint(
                     &mut connect_packet,
-                    resolved_protocol_version,
-                )?; // protocol version - 762 (1.19.4)
-                varint_rs::VarintWriter::write_usize_varint(
-                    &mut connect_packet,
-                    resolved_hostname.as_bytes().len(),
-                )?; // host length - 12
+                    i32::try_from(resolved_hostname.as_bytes().len())?,
+                )
+                .await?; // host length - 12
                 connect_packet
                     .write_all(resolved_hostname.as_bytes())
                     .await?; // host name - shrecked.dev
@@ -66,13 +64,17 @@ impl Client {
 
                 let mut login_start_packet: Vec<u8> = vec![];
                 login_start_packet.write_u8(0x00).await?;
-                varint_rs::VarintWriter::write_usize_varint(
+                write_varint(
                     &mut login_start_packet,
-                    resolved_playername.as_bytes().len(),
-                )?;
+                    i32::try_from(resolved_playername.as_bytes().len())?,
+                )
+                .await?;
                 login_start_packet
                     .write_all(resolved_playername.as_bytes())
                     .await?;
+                if resolved_protocol_version == 759 || resolved_protocol_version == 760 {
+                    login_start_packet.write_u8(0x00).await?;
+                }
                 login_start_packet.write_u8(0x01).await?;
                 let uuid = Uuid::new_v4();
                 login_start_packet.write_all(uuid.as_bytes()).await?;
@@ -88,7 +90,7 @@ impl Client {
 
     pub async fn check_online_mode(
         &mut self,
-        protocol_version: Option<usize>,
+        protocol_version: Option<i32>,
         hostname: Option<&str>,
         port: Option<u16>,
         playername: Option<&str>,

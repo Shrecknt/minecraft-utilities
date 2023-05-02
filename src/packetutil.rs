@@ -16,7 +16,7 @@ pub async fn send_prefixed_packet(
     data: &Vec<u8>,
 ) -> Result<(), Box<dyn Error>> {
     let mut buffer: Vec<u8> = vec![];
-    varint_rs::VarintWriter::write_usize_varint(&mut buffer, data.len())?;
+    write_varint(&mut buffer, i32::try_from(data.len())?).await?;
     buffer.write_all(data).await?;
 
     connection.write_all(&buffer).await?;
@@ -52,6 +52,25 @@ pub async fn get_insane_packet(
 pub async fn read_varint(stream: &mut TcpStream) -> Result<i32, Box<dyn Error>> {
     let (_len, data) = read_varint_len(stream).await?;
     Ok(data)
+}
+
+// yoinked from https://github.com/mat-1/azalea/blob/1fb4418f2c9cbd004c64c2f23d2d0352ee12c0e5/azalea-buf/src/write.rs#L36
+// thanks mat <3
+pub async fn write_varint(buf: &mut impl std::io::Write, val: i32) -> Result<(), Box<dyn Error>> {
+    let mut buffer = [0];
+    let mut value = val;
+    if value == 0 {
+        buf.write_all(&buffer).unwrap();
+    }
+    while value != 0 {
+        buffer[0] = (value & 0b0111_1111) as u8;
+        value = (value >> 7) & (i32::max_value() >> 6);
+        if value != 0 {
+            buffer[0] |= 0b1000_0000;
+        }
+        buf.write_all(&buffer)?;
+    }
+    Ok(())
 }
 
 pub async fn read_varint_len(stream: &mut TcpStream) -> Result<(u32, i32), Box<dyn Error>> {

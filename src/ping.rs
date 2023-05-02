@@ -5,7 +5,7 @@ use tokio::{
     net::TcpStream,
 };
 
-use crate::packetutil::{read_varint, send_prefixed_packet};
+use crate::packetutil::{read_varint, send_prefixed_packet, write_varint};
 
 #[derive(Debug)]
 pub struct Ping {}
@@ -31,8 +31,8 @@ impl Ping {
 
         let mut connect_packet: Vec<u8> = vec![];
         connect_packet.write_u8(0x00).await?;
-        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, send_protocol_version)?; // protocol version - 762 (1.19.4)
-        varint_rs::VarintWriter::write_usize_varint(&mut connect_packet, send_hostname.len())?; // host length - 12
+        write_varint(&mut connect_packet, i32::try_from(send_protocol_version)?).await?; // protocol version - 762 (1.19.4)
+        write_varint(&mut connect_packet, i32::try_from(send_hostname.len())?).await?; // host length - 12
         connect_packet.write_all(send_hostname.as_bytes()).await?; // host name - shrecked.dev
         connect_packet.write_u16(send_port).await?; // port number - 42069
         connect_packet.write_u8(0x01).await?; // next state - 1 (ping)
