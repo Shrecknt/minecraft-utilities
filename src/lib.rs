@@ -9,7 +9,7 @@ mod ping;
 pub use ping::Ping;
 
 mod client;
-pub use client::Client;
+pub use client::{Client, OnlineModeResults};
 
 mod server_address;
 pub use server_address::ServerAddress;
