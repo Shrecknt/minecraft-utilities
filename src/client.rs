@@ -1,8 +1,10 @@
-use std::error::Error;
+use std::{error::Error, str::from_utf8};
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 use uuid::Uuid;
 
-use crate::packetutil::{get_packet, send_prefixed_packet, write_varint, MinecraftPacket};
+use crate::packetutil::{
+    get_packet, read_varint_buf, send_prefixed_packet, write_varint, MinecraftPacket,
+};
 
 #[derive(Debug)]
 pub enum OnlineModeResults {
@@ -94,18 +96,24 @@ impl Client {
         hostname: Option<&str>,
         port: Option<u16>,
         playername: Option<&str>,
-    ) -> Result<OnlineModeResults, Box<dyn Error>> {
+    ) -> Result<(OnlineModeResults, Option<String>), Box<dyn Error>> {
         let res = self
             .join(protocol_version, hostname, port, playername)
             .await?;
         if res.packet_id == 0x00 {
-            Ok(OnlineModeResults::Kicked)
+            let (len, val) = read_varint_buf(&res.buffer).await?;
+            if val > 16777216 {
+                return Err("Exceeded varint size sanity limit".into());
+            }
+            let slice = &res.buffer[len.try_into()?..(u32::try_from(val)? + len).try_into()?];
+            let reason = from_utf8(slice)?;
+            Ok((OnlineModeResults::Kicked, Some(reason.to_string())))
         } else if res.packet_id == 0x01 {
-            Ok(OnlineModeResults::OnlineMode)
+            Ok((OnlineModeResults::OnlineMode, None))
         } else if res.packet_id == 0x03 {
-            Ok(OnlineModeResults::OfflineMode)
+            Ok((OnlineModeResults::OfflineMode, None))
         } else {
-            Ok(OnlineModeResults::UnknownProtocol)
+            Ok((OnlineModeResults::UnknownProtocol, None))
         }
     }
 }

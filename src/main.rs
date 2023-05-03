@@ -102,8 +102,13 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let mut test_client = Client::connect(&address.host, Some(address.port)).await?;
     let test_is_online_mode =
         test_client.check_online_mode(Some(protocol_ver), None, None, Some("gamer"));
-    let is_online_mode_result = timeout(Duration::from_millis(1000), test_is_online_mode).await??;
-    println!("Online mode results: {:?}", is_online_mode_result);
+    let (is_online_mode_result, other) =
+        timeout(Duration::from_millis(1000), test_is_online_mode).await??;
+    println!(
+        "Online mode results: {:?}, other: {}",
+        is_online_mode_result,
+        other.unwrap_or("No other information".to_string())
+    );
 
     Ok(())
 }
