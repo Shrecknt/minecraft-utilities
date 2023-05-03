@@ -53,7 +53,7 @@ impl Ping {
         }
         let len = read_varint(&mut connection).await?;
 
-        let mut data = vec![0; len.try_into().unwrap()];
+        let mut data = vec![0; len.try_into()?];
         connection.read_exact(&mut data).await?;
 
         let source: String = data.iter().map(|x| char::from(*x)).collect();
@@ -65,7 +65,7 @@ impl Ping {
     pub fn get_protocol_version(json: &Value) -> Result<i32, Box<dyn Error>> {
         let val = json["version"]["protocol"].clone().as_i64();
         match val {
-            Some(res) => Ok(res.try_into().unwrap()),
+            Some(res) => Ok(res.try_into()?),
             None => Err("Could not find protocol version".into()),
         }
     }

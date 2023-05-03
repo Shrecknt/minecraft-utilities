@@ -28,7 +28,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     println!(
         "{} = {}",
         check_version_number,
-        parse_version(check_version_number).unwrap()
+        parse_version(check_version_number)?
     );
 
     let args: Vec<String> = std::env::args().collect();
@@ -38,7 +38,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         lookup_ip = args[1].as_str();
     }
 
-    let mut address = ServerAddress::try_from(lookup_ip).unwrap();
+    let mut address = ServerAddress::try_from(lookup_ip)?;
     match resolve_address(&address).await {
         Ok(res) => {
             address = ServerAddress::from(res);
@@ -91,7 +91,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     );
     let ping_result = timeout(Duration::from_millis(1000), test_ping).await?;
     match ping_result {
-        Ok(res) => protocol_ver = Ping::get_protocol_version(&res).unwrap(),
+        Ok(res) => protocol_ver = Ping::get_protocol_version(&res)?,
         Err(err) => {
             println!("An error occured (4): {}", err);
         }

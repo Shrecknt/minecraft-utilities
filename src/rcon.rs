@@ -146,8 +146,8 @@ impl RconPacket {
     }
 
     pub async fn parse(&mut self, raw: &[u8]) -> Result<(), Box<dyn Error>> {
-        let request_id = as_i32_le(&raw[0..4].try_into().unwrap());
-        let request_type = as_i32_le(&raw[4..8].try_into().unwrap());
+        let request_id = as_i32_le(&raw[0..4].try_into()?);
+        let request_type = as_i32_le(&raw[4..8].try_into()?);
         let mut payload = (raw[8..]).to_vec();
         payload.pop();
         payload.pop();

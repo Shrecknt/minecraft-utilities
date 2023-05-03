@@ -39,7 +39,7 @@ pub async fn get_insane_packet(
     }
     let mut len_usize: usize = len.try_into()?;
     let (packet_id_len, packet_id_data) = read_varint_len(connection).await?;
-    let packet_id_length: usize = packet_id_len.try_into().unwrap();
+    let packet_id_length: usize = packet_id_len.try_into()?;
     len_usize -= packet_id_length;
     let mut res: Vec<u8> = vec![0; len_usize];
     connection.read_exact(&mut res).await?;
@@ -60,7 +60,7 @@ pub async fn write_varint(buf: &mut impl std::io::Write, val: i32) -> Result<(),
     let mut buffer = [0];
     let mut value = val;
     if value == 0 {
-        buf.write_all(&buffer).unwrap();
+        buf.write_all(&buffer)?;
     }
     while value != 0 {
         buffer[0] = (value & 0b0111_1111) as u8;
