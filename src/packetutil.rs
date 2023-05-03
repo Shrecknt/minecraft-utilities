@@ -93,3 +93,26 @@ pub async fn read_varint_len(stream: &mut TcpStream) -> Result<(u32, i32), Box<d
         }
     }
 }
+
+pub async fn read_varint_buf(stream: &[u8]) -> Result<(u32, i32), Box<dyn Error>> {
+    let mut buf = vec![0u8];
+    let mut res = 0;
+    let mut count = 0u32;
+
+    let mut idx = 0;
+
+    loop {
+        buf[0] = stream[idx];
+        idx += 1;
+        res |= (buf[0] as i32 & (0b0111_1111_i32))
+            .checked_shl(7 * count)
+            .ok_or("Unsupported protocol")?;
+
+        count += 1;
+        if count > 5 {
+            break Err("Unsupported protocol".into());
+        } else if (buf[0] & (0b1000_0000_u8)) == 0 {
+            break Ok((count, res));
+        }
+    }
+}
