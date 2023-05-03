@@ -77,9 +77,11 @@ impl Client {
                 if resolved_protocol_version == 759 || resolved_protocol_version == 760 {
                     login_start_packet.write_u8(0x00).await?;
                 }
-                login_start_packet.write_u8(0x01).await?;
-                let uuid = Uuid::new_v4();
-                login_start_packet.write_all(uuid.as_bytes()).await?;
+                if resolved_protocol_version >= 759 {
+                    login_start_packet.write_u8(0x01).await?;
+                    let uuid = Uuid::new_v4();
+                    login_start_packet.write_all(uuid.as_bytes()).await?;
+                }
 
                 send_prefixed_packet(stream, &login_start_packet).await?;
 
