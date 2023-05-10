@@ -41,7 +41,7 @@ impl PingBedrock {
 
         // potential issue: what if motd has ';' character?
         if sections.clone().collect::<Vec<_>>().len() != 14 {
-            return Err("Bad return data".into());
+            return Err("Received invalid data".into());
         }
 
         let edition = match sections.next().unwrap() {
