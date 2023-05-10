@@ -8,6 +8,9 @@ pub use rcon::RconClient;
 mod ping;
 pub use ping::Ping;
 
+mod ping_bedrock;
+pub use ping_bedrock::{BedrockServerEdition, BedrockServerGamemode, PingBedrock};
+
 mod client;
 pub use client::{Client, OnlineModeResults};
 

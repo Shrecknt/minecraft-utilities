@@ -1,7 +1,8 @@
 // Crimsongale is mid
 
-use std::error::Error;
+use std::str::FromStr;
 use std::time::Duration;
+use std::{error::Error, net::SocketAddr};
 
 mod ping;
 use ping::Ping;
@@ -20,10 +21,19 @@ mod packetutil;
 mod versions;
 use versions::parse_version;
 
+mod ping_bedrock;
+use ping_bedrock::{BedrockServerEdition, PingBedrock};
+
 use tokio::time::timeout;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
+    let test = PingBedrock::ping(&SocketAddr::from_str("127.0.0.1:19132")?).await?;
+    println!("test: {test:?}");
+    if test.edition == BedrockServerEdition::BedrockEdition {
+        println!("Bedrock edition!");
+    }
+
     let check_version_number = "23w16a";
     println!(
         "{} = {}",

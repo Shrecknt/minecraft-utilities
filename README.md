@@ -18,12 +18,14 @@ Everything is (badly) implemented asynchronously with Tokio
 -   Server List Pinger
 -   -   One-function pinging
 -   Check the auth status of servers
+-   Bedrock Edition Server List Ping
 
 ### Planned Features:
 
 -   Join online mode and offline mode servers
 -   Implement forge and fabric protocols to join modded servers
 -   Control panel / gui
+-   Bedrock Edition Player List (if possible)
 
 ### Maybe Goals:
 
