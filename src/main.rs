@@ -107,6 +107,23 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    let test_ping_2 = Ping::ping_old_protocol(
+        &address.host,
+        Some(address.port),
+        Some(0x49),
+        Some("localhost"),
+        Some(25565),
+    );
+    let ping_result_2 = timeout(Duration::from_millis(1000), test_ping_2).await?;
+    match ping_result_2 {
+        Ok(res) => {
+            println!("res: {res:?}");
+        }
+        Err(err) => {
+            println!("An error occured (5): {}", err);
+        }
+    }
+
     println!("Protocol version: {}", protocol_ver);
 
     let mut test_client = Client::connect(&address.host, Some(address.port)).await?;

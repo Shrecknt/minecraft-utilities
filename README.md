@@ -19,6 +19,7 @@ Everything is (badly) implemented asynchronously with Tokio
 -   -   One-function pinging
 -   Check the auth status of servers
 -   Bedrock Edition Server List Ping
+-   Legacy protocol support
 
 ### Planned Features:
 
@@ -31,5 +32,4 @@ Everything is (badly) implemented asynchronously with Tokio
 
 These are things that I would like to have, but are likely outside the scope of this project
 
--   Legacy protocol support
 -   Custom TCP implementation
