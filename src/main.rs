@@ -28,10 +28,24 @@ use tokio::time::timeout;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    let test = PingBedrock::ping(&SocketAddr::from_str("127.0.0.1:19132")?).await?;
-    println!("test: {test:?}");
-    if test.edition == BedrockServerEdition::BedrockEdition {
-        println!("Bedrock edition!");
+    let bedrock_addr = SocketAddr::from_str("127.0.0.1:19132")?;
+    let bedrock_ping = PingBedrock::ping(&bedrock_addr);
+    let bedrock_ping_timeout = timeout(Duration::from_millis(2500), bedrock_ping).await;
+    match bedrock_ping_timeout {
+        Ok(bedrock_ping_res) => match bedrock_ping_res {
+            Ok(bedrock_ping_res) => {
+                println!("test: {bedrock_ping_res:?}");
+                if bedrock_ping_res.edition == BedrockServerEdition::BedrockEdition {
+                    println!("Bedrock edition!");
+                }
+            }
+            Err(err) => {
+                println!("An error occured (1): {}", err);
+            }
+        },
+        Err(err) => {
+            println!("An error occured (1): {}", err);
+        }
     }
 
     let check_version_number = "23w16a";
@@ -54,7 +68,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             address = ServerAddress::from(res);
         }
         Err(err) => {
-            println!("An error occured (1): {}", err);
+            println!("An error occured (2): {}", err);
         }
     }
     println!("Resolved address: {:?}", address);
@@ -99,9 +113,14 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         Some("shrecked.dev"),
         Some(42069),
     );
-    let ping_result = timeout(Duration::from_millis(1000), test_ping).await?;
+    let ping_result = timeout(Duration::from_millis(1000), test_ping).await;
     match ping_result {
-        Ok(res) => protocol_ver = Ping::get_protocol_version(&res)?,
+        Ok(ping_result) => match ping_result {
+            Ok(res) => protocol_ver = Ping::get_protocol_version(&res)?,
+            Err(err) => {
+                println!("An error occured (4): {}", err);
+            }
+        },
         Err(err) => {
             println!("An error occured (4): {}", err);
         }
@@ -114,11 +133,16 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         Some("localhost"),
         Some(25565),
     );
-    let ping_result_2 = timeout(Duration::from_millis(1000), test_ping_2).await?;
+    let ping_result_2 = timeout(Duration::from_millis(10000), test_ping_2).await;
     match ping_result_2 {
-        Ok(res) => {
-            println!("res: {res:?}");
-        }
+        Ok(ping_result_2) => match ping_result_2 {
+            Ok(res) => {
+                println!("res: {res:?}");
+            }
+            Err(err) => {
+                println!("An error occured (5): {}", err);
+            }
+        },
         Err(err) => {
             println!("An error occured (5): {}", err);
         }
