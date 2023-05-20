@@ -28,10 +28,13 @@ impl RconClient {
         client.stream = Some(connection);
         client.connected = true;
 
-        if password.is_some() {
-            client.login(password.unwrap()).await?;
-        } else {
-            client.connected = false;
+        match password {
+            Some(password) => {
+                client.login(password).await?;
+            },
+            None => {
+                client.connected = false;
+            }
         }
 
         Ok(client)

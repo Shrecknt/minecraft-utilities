@@ -36,7 +36,15 @@ pub struct PingBedrock {
 
 impl PingBedrock {
     pub async fn ping(addr: &SocketAddr) -> Result<Self, Box<dyn Error>> {
-        let (latency, buf) = RaknetSocket::ping(addr).await.unwrap();
+        let (latency, buf);
+        match RaknetSocket::ping(addr).await {
+            Ok(v) => {
+                (latency, buf) = v;
+            },
+            Err(_err) => {
+                return Err("Error connecting to server".into());
+            }
+        };
         let mut sections = buf.split(';');
 
         // potential issue: what if motd has ';' character?
@@ -44,28 +52,28 @@ impl PingBedrock {
             return Err("Received invalid data".into());
         }
 
-        let edition = match sections.next().unwrap() {
+        let edition = match sections.next().unwrap_or("?") {
             "MCPE" => BedrockServerEdition::BedrockEdition,
             "MCEE" => BedrockServerEdition::EducationEdition,
             _ => BedrockServerEdition::Unknown,
         };
-        let mut motd = sections.next().unwrap().to_string();
-        let protocol_version = sections.next().unwrap().parse::<i64>()?;
-        let version_name = sections.next().unwrap().to_string();
-        let player_count = sections.next().unwrap().parse::<i64>()?;
-        let max_player_count = sections.next().unwrap().parse::<i64>()?;
-        let server_unique_id = sections.next().unwrap().to_string();
-        motd = format!("{motd}\n{}", sections.next().unwrap());
-        let game_mode = match sections.next().unwrap() {
+        let mut motd = sections.next().unwrap_or("?").to_string();
+        let protocol_version = sections.next().unwrap_or("-1").parse::<i64>()?;
+        let version_name = sections.next().unwrap_or("?").to_string();
+        let player_count = sections.next().unwrap_or("-1").parse::<i64>()?;
+        let max_player_count = sections.next().unwrap_or("-1").parse::<i64>()?;
+        let server_unique_id = sections.next().unwrap_or("?").to_string();
+        motd = format!("{motd}\n{}", sections.next().unwrap_or("?"));
+        let game_mode = match sections.next().unwrap_or("?") {
             "Creative" => BedrockServerGamemode::Creative,
             "Survival" => BedrockServerGamemode::Survival,
             "Adventure" => BedrockServerGamemode::Adventure,
             "Spectator" => BedrockServerGamemode::Spectator,
             _ => BedrockServerGamemode::Unknown,
         };
-        let game_mode_numeric = sections.next().unwrap().parse::<i8>()?;
-        let port_v4 = sections.next().unwrap().parse::<u16>()?;
-        let port_v6 = sections.next().unwrap().parse::<u16>()?;
+        let game_mode_numeric = sections.next().unwrap_or("-1").parse::<i8>()?;
+        let port_v4 = sections.next().unwrap_or("0").parse::<u16>()?;
+        let port_v6 = sections.next().unwrap_or("0").parse::<u16>()?;
 
         Ok(PingBedrock {
             response_time: latency,
