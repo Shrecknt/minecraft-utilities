@@ -15,7 +15,7 @@
 
 use std::{
     fmt::Display,
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    net::{AddrParseError, Ipv4Addr, SocketAddr, SocketAddrV4},
     str::FromStr,
 };
 
@@ -76,13 +76,16 @@ impl From<SocketAddr> for ServerAddress {
     }
 }
 
-impl From<ServerAddress> for SocketAddr {
+impl TryFrom<ServerAddress> for SocketAddr {
+    type Error = AddrParseError;
+
     /// Convert an existing `ServerAddress` into a `SocketAddr`.
-    fn from(addr: ServerAddress) -> Self {
-        SocketAddr::V4(SocketAddrV4::new(
-            Ipv4Addr::from_str(&addr.host).unwrap(),
-            addr.port,
-        ))
+    fn try_from(addr: ServerAddress) -> Result<Self, Self::Error> {
+        let v4_addr = Ipv4Addr::from_str(&addr.host);
+        match v4_addr {
+            Ok(v4_addr) => Ok(SocketAddr::V4(SocketAddrV4::new(v4_addr, addr.port))),
+            Err(err) => Err(err),
+        }
     }
 }
 

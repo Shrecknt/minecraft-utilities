@@ -37,7 +37,7 @@ pub struct PingBedrock {
 
 impl PingBedrock {
     pub async fn ping(addr: &ServerAddress) -> Result<Self, Box<dyn Error>> {
-        let deref_addr: std::net::SocketAddr = addr.clone().into();
+        let deref_addr: std::net::SocketAddr = addr.clone().try_into()?;
         let (latency, buf);
         match RaknetSocket::ping(&deref_addr).await {
             Ok(v) => {
