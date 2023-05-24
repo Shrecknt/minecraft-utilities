@@ -7,7 +7,7 @@ use tokio::{
 
 use crate::ServerAddress;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum RconError {
     #[error("Attempted to authenticate while already logged into RCON server.")]
     DoubleLogin,

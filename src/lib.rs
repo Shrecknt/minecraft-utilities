@@ -3,7 +3,7 @@
 mod packetutil;
 
 mod rcon;
-pub use rcon::RconClient;
+pub use rcon::{RconClient, RconError};
 
 mod ping;
 pub use ping::Ping;
