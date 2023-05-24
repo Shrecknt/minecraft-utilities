@@ -1,10 +1,25 @@
 use std::error::Error;
+use thiserror::Error;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
 };
 
 use crate::ServerAddress;
+
+#[derive(Error, Debug)]
+pub enum RconError {
+    #[error("Attempted to authenticate while already logged into RCON server.")]
+    DoubleLogin,
+    #[error("Authentication failure, make sure you sent the correct password.")]
+    AuthenticationFailure,
+    #[error("Recieved a strange packet from the server. Are you sure this is an RCON server?")]
+    StrangePacket,
+    #[error("Attempted to send packet before establishing a connection to the server.")]
+    EarlyPacket,
+    #[error("Attempted to send command before client is authenticated.")]
+    EarlyCommand,
+}
 
 #[derive(Debug)]
 pub struct RconClient {
@@ -43,7 +58,7 @@ impl RconClient {
 
     pub async fn login(&mut self, password: &str) -> Result<RconPacket, Box<dyn Error>> {
         if self.connected {
-            return Err("Attempted to authenticate while already logged into RCON server".into());
+            return Err(RconError::DoubleLogin.into());
         }
 
         let mut login_packet = RconPacket::new();
@@ -57,15 +72,10 @@ impl RconClient {
 
         if login_res.request_id == -1 {
             self.connected = false;
-            return Err(
-                "Authentication failure, make sure you typed your password correctly".into(),
-            );
+            return Err(RconError::AuthenticationFailure.into());
         } else if login_res.request_id != login_packet_id {
             self.connected = false;
-            return Err(
-                "Recieved a strange packet from server. Are you sure this is an RCON server?"
-                    .into(),
-            );
+            return Err(RconError::StrangePacket.into());
         }
 
         self.connected = true;
@@ -82,24 +92,19 @@ impl RconClient {
                 stream.readable().await?;
                 let size = stream.read_i32_le().await?;
                 let mut res_buf: Vec<u8> = vec![0; size as usize];
-                let read_res = stream.read_exact(&mut res_buf).await;
-                if read_res.is_err() {
-                    return Err("The server lied".into());
-                }
+                stream.read_exact(&mut res_buf).await?;
                 let mut res_return_packet = RconPacket::new();
                 res_return_packet.parse(&res_buf).await?;
 
                 Ok(res_return_packet)
             }
-            None => {
-                Err("Attempted to send packet before establishing a connection to server".into())
-            }
+            None => Err(RconError::EarlyPacket.into()),
         }
     }
 
     pub async fn command(&mut self, command: &str) -> Result<String, Box<dyn Error>> {
         if !self.connected {
-            return Err("Attempted to send command before client is authenticated".into());
+            return Err(RconError::EarlyCommand.into());
         }
 
         let mut packet = RconPacket::new();
