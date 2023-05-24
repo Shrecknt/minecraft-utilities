@@ -126,7 +126,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let test_ping_2 = Ping::ping_old_protocol(
+    let test_ping_2 = Ping::ping_legacy_protocol(
         &address.host,
         Some(address.port),
         Some(0x49),

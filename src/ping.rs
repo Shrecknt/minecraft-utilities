@@ -8,7 +8,7 @@ use tokio::{
 use crate::packetutil::{read_varint, send_prefixed_packet, write_varint};
 
 #[derive(Debug)]
-pub struct OldPingResult {
+pub struct LegacyPingResult {
     pub protocol_version: u8,
     pub server_version: String,
     pub motd: String,
@@ -16,9 +16,9 @@ pub struct OldPingResult {
     pub max_player_count: isize,
 }
 
-impl OldPingResult {
+impl LegacyPingResult {
     pub fn default() -> Self {
-        OldPingResult {
+        LegacyPingResult {
             protocol_version: 0,
             server_version: String::from(""),
             motd: String::from(""),
@@ -91,13 +91,13 @@ impl Ping {
         }
     }
 
-    pub async fn ping_old_protocol(
+    pub async fn ping_legacy_protocol(
         host: &str,
         port: Option<u16>,
         input_protocol_version: Option<u8>,
         input_hostname: Option<&str>,
         input_port: Option<u16>,
-    ) -> Result<OldPingResult, Box<dyn Error>> {
+    ) -> Result<LegacyPingResult, Box<dyn Error>> {
         const DEFAULT_PROTOCOL_VERSION: u8 = 69;
         const DEFAULT_HOSTNAME: &str = "shrecked.dev";
         const DEFAULT_PORT: u16 = 25565;
@@ -153,7 +153,7 @@ impl Ping {
         let mut res_iter = res_string.split('\0');
 
         let _header = res_iter.next();
-        let mut ping_res = OldPingResult::default();
+        let mut ping_res = LegacyPingResult::default();
         ping_res.protocol_version = str::parse::<u8>(res_iter.next().unwrap_or("0"))?;
         ping_res.server_version = res_iter.next().unwrap_or("???").to_string();
         ping_res.motd = res_iter.next().unwrap_or("???").to_string();
