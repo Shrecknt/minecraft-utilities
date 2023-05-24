@@ -2,8 +2,11 @@ use std::{error::Error, str::from_utf8};
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 use uuid::Uuid;
 
-use crate::packetutil::{
-    get_packet, read_varint_buf, send_prefixed_packet, write_varint, MinecraftPacket,
+use crate::{
+    packetutil::{
+        get_packet, read_varint_buf, send_prefixed_packet, write_varint, MinecraftPacket,
+    },
+    server_address::ServerAddress,
 };
 
 #[derive(Debug)]
@@ -16,20 +19,19 @@ pub enum OnlineModeResults {
 
 #[derive(Debug)]
 pub struct Client {
-    host: String,
-    port: u16,
+    address: ServerAddress,
     connection: Option<TcpStream>,
 }
 
 impl Client {
-    pub async fn connect(host: &str, port: Option<u16>) -> Result<Self, Box<dyn Error>> {
+    pub async fn connect(addr: &ServerAddress) -> Result<Self, Box<dyn Error>> {
         let mut res = Client {
-            host: String::from(host),
-            port: port.unwrap_or(25565),
+            address: addr.clone(),
             connection: None,
         };
 
-        res.connection = Some(TcpStream::connect(format!("{}:{}", res.host, res.port)).await?);
+        res.connection =
+            Some(TcpStream::connect(format!("{}:{}", res.address.host, res.address.port)).await?);
 
         Ok(res)
     }

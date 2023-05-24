@@ -5,7 +5,7 @@
 //! yoinked from https://github.com/mat-1/azalea/blob/67dc5b367f67909d9679f9898c9c352e09a409fd/azalea-protocol/src/resolver.rs
 
 use async_recursion::async_recursion;
-use std::net::{IpAddr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr};
 use thiserror::Error;
 use trust_dns_resolver::{
     config::{ResolverConfig, ResolverOpts},
@@ -26,10 +26,10 @@ pub enum ResolverError {
 /// If it's already an IP address, it's returned as-is.
 #[must_use]
 #[async_recursion]
-pub async fn resolve_address(address: &ServerAddress) -> Result<SocketAddr, ResolverError> {
+pub async fn resolve_address(address: &ServerAddress) -> Result<ServerAddress, ResolverError> {
     // If the address.host is already in the format of an ip address, return it.
     if let Ok(ip) = address.host.parse::<IpAddr>() {
-        return Ok(SocketAddr::new(ip, address.port));
+        return Ok(ServerAddress::new(ip.to_string().as_str(), address.port));
     }
 
     // we specify Cloudflare instead of the default resolver because
@@ -58,8 +58,13 @@ pub async fn resolve_address(address: &ServerAddress) -> Result<SocketAddr, Reso
         if redirect_address.host == address.host {
             let lookup_ip_result = resolver.lookup_ip(redirect_address.host).await;
             let lookup_ip = lookup_ip_result.map_err(|_| ResolverError::NoIp)?;
-            return Ok(SocketAddr::new(
-                lookup_ip.iter().next().unwrap(),
+            return Ok(ServerAddress::new(
+                lookup_ip
+                    .iter()
+                    .next()
+                    .unwrap_or(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)))
+                    .to_string()
+                    .as_str(),
                 redirect_address.port,
             ));
         }
@@ -73,8 +78,13 @@ pub async fn resolve_address(address: &ServerAddress) -> Result<SocketAddr, Reso
     let lookup_ip_result = resolver.lookup_ip(address.host.clone()).await;
     let lookup_ip = lookup_ip_result.map_err(|_| ResolverError::NoIp)?;
 
-    Ok(SocketAddr::new(
-        lookup_ip.iter().next().unwrap(),
+    Ok(ServerAddress::new(
+        lookup_ip
+            .iter()
+            .next()
+            .unwrap_or(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)))
+            .to_string()
+            .as_str(),
         address.port,
     ))
 }

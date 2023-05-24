@@ -1,5 +1,6 @@
-use std::{error::Error, net::SocketAddr};
+use std::error::Error;
 
+use crate::ServerAddress;
 use rust_raknet::RaknetSocket;
 
 #[derive(Debug, PartialEq)]
@@ -35,12 +36,13 @@ pub struct PingBedrock {
 }
 
 impl PingBedrock {
-    pub async fn ping(addr: &SocketAddr) -> Result<Self, Box<dyn Error>> {
+    pub async fn ping(addr: &ServerAddress) -> Result<Self, Box<dyn Error>> {
+        let deref_addr: std::net::SocketAddr = addr.clone().into();
         let (latency, buf);
-        match RaknetSocket::ping(addr).await {
+        match RaknetSocket::ping(&deref_addr).await {
             Ok(v) => {
                 (latency, buf) = v;
-            },
+            }
             Err(_err) => {
                 return Err("Error connecting to server".into());
             }

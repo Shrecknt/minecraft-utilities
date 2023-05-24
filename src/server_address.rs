@@ -13,7 +13,11 @@
 //!
 //! yoinked from https://github.com/mat-1/azalea/blob/c1588ef66e844c067112ea880a54b4de9ec5a062/azalea-protocol/src/lib.rs
 
-use std::{fmt::Display, net::SocketAddr, str::FromStr};
+use std::{
+    fmt::Display,
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    str::FromStr,
+};
 
 /// A host and port. It's possible that the port doesn't resolve to anything.
 ///
@@ -31,6 +35,15 @@ use std::{fmt::Display, net::SocketAddr, str::FromStr};
 pub struct ServerAddress {
     pub host: String,
     pub port: u16,
+}
+
+impl ServerAddress {
+    pub fn new(host: &str, port: u16) -> Self {
+        ServerAddress {
+            host: host.to_string(),
+            port,
+        }
+    }
 }
 
 impl<'a> TryFrom<&'a str> for ServerAddress {
@@ -60,6 +73,16 @@ impl From<SocketAddr> for ServerAddress {
             host: addr.ip().to_string(),
             port: addr.port(),
         }
+    }
+}
+
+impl From<ServerAddress> for SocketAddr {
+    /// Convert an existing `ServerAddress` into a `SocketAddr`.
+    fn from(addr: ServerAddress) -> Self {
+        SocketAddr::V4(SocketAddrV4::new(
+            Ipv4Addr::from_str(&addr.host).unwrap(),
+            addr.port,
+        ))
     }
 }
 

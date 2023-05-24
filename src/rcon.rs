@@ -4,6 +4,8 @@ use tokio::{
     net::TcpStream,
 };
 
+use crate::ServerAddress;
+
 #[derive(Debug)]
 pub struct RconClient {
     request_id: i32,
@@ -13,8 +15,7 @@ pub struct RconClient {
 
 impl RconClient {
     pub async fn connect(
-        host: &str,
-        port: Option<u16>,
+        addr: &ServerAddress,
         password: Option<&str>,
     ) -> Result<Self, Box<dyn Error>> {
         let mut client = RconClient {
@@ -23,7 +24,7 @@ impl RconClient {
             stream: None,
         };
 
-        let connection = TcpStream::connect(format!("{}:{}", host, port.unwrap_or(25575))).await?;
+        let connection = TcpStream::connect(format!("{}:{}", addr.host, addr.port)).await?;
 
         client.stream = Some(connection);
         client.connected = true;
@@ -31,7 +32,7 @@ impl RconClient {
         match password {
             Some(password) => {
                 client.login(password).await?;
-            },
+            }
             None => {
                 client.connected = false;
             }

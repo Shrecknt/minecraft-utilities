@@ -1,8 +1,7 @@
 // Crimsongale is mid
 
-use std::str::FromStr;
+use std::error::Error;
 use std::time::Duration;
-use std::{error::Error, net::SocketAddr};
 
 mod ping;
 use ping::Ping;
@@ -28,7 +27,7 @@ use tokio::time::timeout;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    let bedrock_addr = SocketAddr::from_str("127.0.0.1:19132")?;
+    let bedrock_addr = ServerAddress::try_from("127.0.0.1:19132")?;
     let bedrock_ping = PingBedrock::ping(&bedrock_addr);
     let bedrock_ping_timeout = timeout(Duration::from_millis(2500), bedrock_ping).await;
     match bedrock_ping_timeout {
@@ -65,7 +64,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let mut address = ServerAddress::try_from(lookup_ip)?;
     match resolve_address(&address).await {
         Ok(res) => {
-            address = ServerAddress::from(res);
+            address = res;
         }
         Err(err) => {
             println!("An error occured (2): {}", err);
@@ -126,13 +125,8 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let test_ping_2 = Ping::ping_legacy_protocol(
-        &address.host,
-        Some(address.port),
-        Some(0x49),
-        Some("localhost"),
-        Some(25565),
-    );
+    let test_ping_2 =
+        Ping::ping_legacy_protocol(&address, Some(0x49), Some("localhost"), Some(25565));
     let ping_result_2 = timeout(Duration::from_millis(10000), test_ping_2).await;
     match ping_result_2 {
         Ok(ping_result_2) => match ping_result_2 {
@@ -150,7 +144,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Protocol version: {}", protocol_ver);
 
-    let mut test_client = Client::connect(&address.host, Some(address.port)).await?;
+    let mut test_client = Client::connect(&address).await?;
     let test_is_online_mode =
         test_client.check_online_mode(Some(protocol_ver), None, None, Some("gamer"));
     let (is_online_mode_result, other) =

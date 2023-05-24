@@ -5,7 +5,10 @@ use tokio::{
     net::TcpStream,
 };
 
-use crate::packetutil::{read_varint, send_prefixed_packet, write_varint};
+use crate::{
+    packetutil::{read_varint, send_prefixed_packet, write_varint},
+    server_address::ServerAddress,
+};
 
 #[derive(Debug)]
 pub struct LegacyPingResult {
@@ -92,8 +95,7 @@ impl Ping {
     }
 
     pub async fn ping_legacy_protocol(
-        host: &str,
-        port: Option<u16>,
+        addr: &ServerAddress,
         input_protocol_version: Option<u8>,
         input_hostname: Option<&str>,
         input_port: Option<u16>,
@@ -106,8 +108,7 @@ impl Ping {
         let send_hostname = input_hostname.unwrap_or(DEFAULT_HOSTNAME);
         let send_port = input_port.unwrap_or(DEFAULT_PORT);
 
-        let mut connection =
-            TcpStream::connect(format!("{}:{}", host, port.unwrap_or(25565))).await?;
+        let mut connection = TcpStream::connect(format!("{}:{}", addr.host, addr.port)).await?;
 
         let mut ping_packet: Vec<u8> = vec![];
         ping_packet
