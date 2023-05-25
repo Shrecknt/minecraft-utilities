@@ -25,7 +25,7 @@ use std::{
 ///
 /// `ServerAddress` implements TryFrom<&str>, so you can use it like this:
 /// ```
-/// use azalea_protocol::ServerAddress;
+/// use minecraft_utilities::ServerAddress;
 ///
 /// let addr = ServerAddress::try_from("localhost:25565").unwrap();
 /// assert_eq!(addr.host, "localhost");
@@ -81,11 +81,8 @@ impl TryFrom<ServerAddress> for SocketAddr {
 
     /// Convert an existing `ServerAddress` into a `SocketAddr`.
     fn try_from(addr: ServerAddress) -> Result<Self, Self::Error> {
-        let v4_addr = Ipv4Addr::from_str(&addr.host);
-        match v4_addr {
-            Ok(v4_addr) => Ok(SocketAddr::V4(SocketAddrV4::new(v4_addr, addr.port))),
-            Err(err) => Err(err),
-        }
+        let v4_addr = Ipv4Addr::from_str(&addr.host)?;
+        Ok(SocketAddr::V4(SocketAddrV4::new(v4_addr, addr.port)))
     }
 }
 
