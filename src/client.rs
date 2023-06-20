@@ -42,6 +42,7 @@ impl Client {
         hostname: Option<&str>,
         port: Option<u16>,
         playername: Option<&str>,
+        player_uuid: Option<Uuid>,
     ) -> Result<MinecraftPacket, Box<dyn Error>> {
         match &mut self.connection {
             Some(stream) => {
@@ -80,9 +81,15 @@ impl Client {
                     login_start_packet.write_u8(0x00).await?;
                 }
                 if resolved_protocol_version >= 759 {
-                    login_start_packet.write_u8(0x01).await?;
-                    let uuid = Uuid::new_v4();
-                    login_start_packet.write_all(uuid.as_bytes()).await?;
+                    match player_uuid {
+                        Some(uuid) => {
+                            login_start_packet.write_u8(0x01).await?;
+                            login_start_packet.write_all(uuid.as_bytes()).await?;
+                        }
+                        None => {
+                            login_start_packet.write_u8(0x00).await?;
+                        }
+                    }
                 }
 
                 send_prefixed_packet(stream, &login_start_packet).await?;
@@ -100,9 +107,10 @@ impl Client {
         hostname: Option<&str>,
         port: Option<u16>,
         playername: Option<&str>,
+        player_uuid: Option<Uuid>,
     ) -> Result<(OnlineModeResults, Option<String>), Box<dyn Error>> {
         let res = self
-            .join(protocol_version, hostname, port, playername)
+            .join(protocol_version, hostname, port, playername, player_uuid)
             .await?;
         if res.packet_id == 0x00 {
             let (len, val) = read_varint_buf(&res.buffer).await?;

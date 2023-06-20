@@ -24,6 +24,7 @@ mod ping_bedrock;
 use ping_bedrock::{BedrockServerEdition, PingBedrock};
 
 use tokio::time::timeout;
+use uuid::uuid;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
@@ -145,8 +146,13 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     println!("Protocol version: {}", protocol_ver);
 
     let mut test_client = Client::connect(&address).await?;
-    let test_is_online_mode =
-        test_client.check_online_mode(Some(protocol_ver), None, None, Some("gamer"));
+    let test_is_online_mode = test_client.check_online_mode(
+        Some(protocol_ver),
+        None,
+        None,
+        Some("Gamer"),
+        Some(uuid!("b64dfb9c-82ec-426d-918c-73f62afc4e01")),
+    );
     let (is_online_mode_result, other) =
         timeout(Duration::from_millis(1000), test_is_online_mode).await??;
     println!(
